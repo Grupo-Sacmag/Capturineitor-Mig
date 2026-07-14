@@ -1,22 +1,18 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\desarrollo.conta\\Desktop\\CapturaDePolizas_Auxiliares_NET8_2026\\",
+  "WorkspaceRootPath": "C:\\Users\\desarrollo.conta\\Desktop\\ReposGitHub\\CAP \u002B AUX C# 2026\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|c:\\users\\desarrollo.conta\\desktop\\capturadepolizas_auxiliares_net8_2026\\formcaptura.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
-      "RelativeMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|solutionrelative:formcaptura.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+      "AbsoluteMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|c:\\users\\desarrollo.conta\\desktop\\reposgithub\\cap \u002B aux c# 2026\\formpolizadiario.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|solutionrelative:formpolizadiario.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|c:\\users\\desarrollo.conta\\desktop\\capturadepolizas_auxiliares_net8_2026\\formprincipal.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|solutionrelative:formprincipal.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|c:\\users\\desarrollo.conta\\desktop\\reposgithub\\cap \u002B aux c# 2026\\formpolizadiario.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|solutionrelative:formpolizadiario.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|C:\\Users\\desarrollo.conta\\Desktop\\CapturaDePolizas_Auxiliares_NET8_2026\\formprincipal.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
-      "RelativeMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|solutionrelative:formprincipal.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|c:\\users\\desarrollo.conta\\desktop\\capturadepolizas_auxiliares_net8_2026\\formcaptura.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|solutionrelative:formcaptura.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|c:\\users\\desarrollo.conta\\desktop\\reposgithub\\cap \u002B aux c# 2026\\formpolizadiario.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|solutionrelative:formpolizadiario.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -26,58 +22,48 @@
       "DocumentGroups": [
         {
           "DockedWidth": 43,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "FormCaptura.cs [Dise\u00F1o]",
-              "DocumentMoniker": "C:\\Users\\desarrollo.conta\\Desktop\\CapturaDePolizas_Auxiliares_NET8_2026\\FormCaptura.cs",
-              "RelativeDocumentMoniker": "FormCaptura.cs",
-              "ToolTip": "C:\\Users\\desarrollo.conta\\Desktop\\CapturaDePolizas_Auxiliares_NET8_2026\\FormCaptura.cs [Dise\u00F1o]",
-              "RelativeToolTip": "FormCaptura.cs [Dise\u00F1o]",
+              "DocumentIndex": 1,
+              "Title": "FormPolizaDiario.cs [Dise\u00F1o]",
+              "DocumentMoniker": "C:\\Users\\desarrollo.conta\\Desktop\\ReposGitHub\\CAP \u002B AUX C# 2026\\FormPolizaDiario.cs",
+              "RelativeDocumentMoniker": "FormPolizaDiario.cs",
+              "ToolTip": "C:\\Users\\desarrollo.conta\\Desktop\\ReposGitHub\\CAP \u002B AUX C# 2026\\FormPolizaDiario.cs [Dise\u00F1o]",
+              "RelativeToolTip": "FormPolizaDiario.cs [Dise\u00F1o]",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-07T16:00:10.626Z",
+              "WhenOpened": "2026-07-14T00:49:54.195Z",
               "IsPinned": true,
               "EditorCaption": " [Dise\u00F1o]"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "FormCaptura.cs",
-              "DocumentMoniker": "C:\\Users\\desarrollo.conta\\Desktop\\CapturaDePolizas_Auxiliares_NET8_2026\\FormCaptura.cs",
-              "RelativeDocumentMoniker": "FormCaptura.cs",
-              "ToolTip": "C:\\Users\\desarrollo.conta\\Desktop\\CapturaDePolizas_Auxiliares_NET8_2026\\FormCaptura.cs",
-              "RelativeToolTip": "FormCaptura.cs",
-              "ViewState": "AgIAAEcFAAAAAAAAAAAwwBAHAAALAAAAAAAAAA==",
+              "DocumentIndex": 0,
+              "Title": "FormPolizaDiario.cs",
+              "DocumentMoniker": "C:\\Users\\desarrollo.conta\\Desktop\\ReposGitHub\\CAP \u002B AUX C# 2026\\FormPolizaDiario.cs",
+              "RelativeDocumentMoniker": "FormPolizaDiario.cs",
+              "ToolTip": "C:\\Users\\desarrollo.conta\\Desktop\\ReposGitHub\\CAP \u002B AUX C# 2026\\FormPolizaDiario.cs",
+              "RelativeToolTip": "FormPolizaDiario.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACwBAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-13T17:35:09.369Z",
-              "IsPinned": true
+              "WhenOpened": "2026-07-13T23:37:31.779Z",
+              "IsPinned": true,
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 2,
-              "Title": "FormPrincipal.cs [Dise\u00F1o]",
-              "DocumentMoniker": "C:\\Users\\desarrollo.conta\\Desktop\\CapturaDePolizas_Auxiliares_NET8_2026\\FormPrincipal.cs",
-              "RelativeDocumentMoniker": "FormPrincipal.cs",
-              "ToolTip": "C:\\Users\\desarrollo.conta\\Desktop\\CapturaDePolizas_2026_NET8\\FormPrincipal.cs [Dise\u00F1o]",
-              "RelativeToolTip": "..\\CapturaDePolizas_2026_NET8\\FormPrincipal.cs [Dise\u00F1o]",
+              "Title": "FormPolizaDiario.Designer.cs",
+              "DocumentMoniker": "C:\\Users\\desarrollo.conta\\Desktop\\ReposGitHub\\CAP \u002B AUX C# 2026\\FormPolizaDiario.Designer.cs",
+              "RelativeDocumentMoniker": "FormPolizaDiario.Designer.cs",
+              "ToolTip": "C:\\Users\\desarrollo.conta\\Desktop\\ReposGitHub\\CAP \u002B AUX C# 2026\\FormPolizaDiario.Designer.cs",
+              "RelativeToolTip": "FormPolizaDiario.Designer.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAADkAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-13T18:06:40.464Z",
-              "IsPinned": true
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "FormPrincipal.cs",
-              "DocumentMoniker": "C:\\Users\\desarrollo.conta\\Desktop\\CapturaDePolizas_Auxiliares_NET8_2026\\FormPrincipal.cs",
-              "RelativeDocumentMoniker": "FormPrincipal.cs",
-              "ToolTip": "C:\\Users\\desarrollo.conta\\Desktop\\CapturaDePolizas_Auxiliares_NET8_2026\\FormPrincipal.cs",
-              "RelativeToolTip": "FormPrincipal.cs",
-              "ViewState": "AgIAAGkAAAAAAAAAAAAYwH8AAAAUAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-13T18:06:47.016Z",
-              "IsPinned": true
+              "WhenOpened": "2026-07-14T00:43:15.299Z",
+              "IsPinned": true,
+              "EditorCaption": ""
             }
           ]
         }

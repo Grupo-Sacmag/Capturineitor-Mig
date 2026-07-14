@@ -1808,7 +1808,7 @@ public partial class FormCaptura : Form
 
         try
         {
-            using FormPrincipal auxiliares = new FormPrincipal();
+            using FormAuxiliar auxiliares = new FormAuxiliar();
             auxiliares.ShowDialog();
         }
         finally

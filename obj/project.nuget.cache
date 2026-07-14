@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "z6c2z7nm7jk=",
+  "dgSpecHash": "5rxlMP4Q3w4=",
   "success": true,
-  "projectFilePath": "C:\\Users\\desarrollo.conta\\Desktop\\CapturaDePolizas_Auxiliares_NET8_2026\\CapturaDePolizas_2026_NET8.csproj",
+  "projectFilePath": "C:\\Users\\desarrollo.conta\\Desktop\\ReposGitHub\\CAP + AUX C# 2026\\CapturaDePolizas_2026_NET8.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\desarrollo.conta\\.nuget\\packages\\azure.core\\1.38.0\\azure.core.1.38.0.nupkg.sha512",
     "C:\\Users\\desarrollo.conta\\.nuget\\packages\\azure.identity\\1.11.4\\azure.identity.1.11.4.nupkg.sha512",

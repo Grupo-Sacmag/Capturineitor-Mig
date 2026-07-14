@@ -1,6 +1,6 @@
 ﻿namespace GaCostos
 {
-    partial class FormPrincipal
+    partial class FormAuxiliar
     {
         private System.ComponentModel.IContainer? components = null;
 
@@ -30,7 +30,7 @@
 
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormPrincipal));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormAuxiliar));
             menuStripPrincipal = new MenuStrip();
             menuArchivo = new ToolStripMenuItem();
             menuActualizar = new ToolStripMenuItem();

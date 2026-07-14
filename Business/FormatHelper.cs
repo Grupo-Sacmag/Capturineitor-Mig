@@ -1,6 +1,6 @@
 ﻿using System.Globalization;
 
-namespace GaCostos.Utils;
+namespace CapturaDePolizas_2026_NET8.Business;
 
 public static class FormatHelper
 {

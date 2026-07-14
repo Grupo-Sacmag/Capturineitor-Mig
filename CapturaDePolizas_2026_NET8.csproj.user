@@ -13,7 +13,7 @@
     <Compile Update="FormPolizaDiario.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Update="FormPrincipal.cs">
+    <Compile Update="FormAuxiliar.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Update="FormVerCuentas.cs">

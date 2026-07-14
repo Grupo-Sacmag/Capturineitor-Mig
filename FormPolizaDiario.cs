@@ -7,9 +7,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using CapturaDePolizas_2026_NET8.Business;
 using GaCostos.Models;
 using GaCostos.Services;
-using GaCostos.Utils;
 
 namespace GaCostos
 {
@@ -23,7 +23,7 @@ namespace GaCostos
 
         public FormPolizaDiario(ContabilidadService contabilidadService)
         {
-            _contabilidadService = contabilidadService;
+            _contabilidadService = contabilidadService ?? throw new ArgumentNullException(nameof(contabilidadService));
 
             InitializeComponent();
             InicializarFormulario();
@@ -33,26 +33,23 @@ namespace GaCostos
         {
             try
             {
-                dgvPoliza.Rows.Clear();
+                LimpiarFormulario();
 
                 IReadOnlyList<RegistroOperacion> registros = _contabilidadService.ObtenerPolizaDiario(rutaDatos, fechaMovimiento, numeroPoliza);
 
                 if (registros.Count == 0)
                 {
                     MessageBox.Show(this, "No se encontró la póliza en el archivo de operaciones.", "Sin resultado", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
                     return false;
                 }
 
                 PintarPoliza(registros);
-
                 return true;
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, $"No fue posible cargar la póliza.{Environment.NewLine}{Environment.NewLine}{ex.Message}", "Error", MessageBoxButtons.OK,
+                MessageBox.Show(this, $"No fue posible cargar la póliza." + $"{Environment.NewLine}{Environment.NewLine}" + ex.Message, "Error", MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
-
                 return false;
             }
         }
@@ -61,7 +58,8 @@ namespace GaCostos
         {
             ConfigurarGrid();
 
-            btnCerrar.Click += BtnCerrar_Click;
+            menuCopiarSeleccion.Click += MenuCopiarSeleccion_Click;
+            menuSeleccionarTodo.Click += MenuSeleccionarTodo_Click;
             dgvPoliza.KeyDown += DgvPoliza_KeyDown;
         }
 
@@ -69,36 +67,80 @@ namespace GaCostos
         {
             dgvPoliza.Columns.Clear();
 
-            AgregarColumna("Cuenta", "Cuenta", 100);
-            AgregarColumna("SubCuenta", "SubCta", 100);
-            AgregarColumna("Nombre", "Nombre", 260);
-            AgregarColumna("Parcial", "Parcial", 120);
-            AgregarColumna("Debe", "Debe", 120);
-            AgregarColumna("Haber", "Haber", 120);
-            AgregarColumna("Redaccion", "Redacción", 280);
+            AgregarColumnaTexto(
+                name: "Cuenta",
+                headerText: "Cuenta",
+                width: 90);
 
-            dgvPoliza.EnableHeadersVisualStyles = false;
-            dgvPoliza.ColumnHeadersDefaultCellStyle.BackColor = Color.Gold;
-            dgvPoliza.ColumnHeadersDefaultCellStyle.Font = new Font(dgvPoliza.Font, FontStyle.Bold);
+            AgregarColumnaTexto(
+                name: "SubCuenta",
+                headerText: "SubCta",
+                width: 80);
 
-            AlinearDerecha("Parcial");
-            AlinearDerecha("Debe");
-            AlinearDerecha("Haber");
+            AgregarColumnaTexto(
+                name: "Nombre",
+                headerText: "Nombre",
+                width: 220);
 
-            dgvPoliza.Columns["Nombre"]!.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            AgregarColumnaImporte(
+                name: "Parcial",
+                headerText: "Parcial",
+                width: 110);
+
+            AgregarColumnaImporte(
+                name: "Debe",
+                headerText: "Debe",
+                width: 110);
+
+            AgregarColumnaImporte(
+                name: "Haber",
+                headerText: "Haber",
+                width: 110);
+
+            AgregarColumnaTexto(
+                name: "Redaccion",
+                headerText: "Redacción",
+                width: 250);
+
             dgvPoliza.Columns["Redaccion"]!.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            dgvPoliza.ColumnHeadersDefaultCellStyle.BackColor = Color.Gainsboro;
+            dgvPoliza.ColumnHeadersDefaultCellStyle.ForeColor = Color.Black;
+            dgvPoliza.ColumnHeadersDefaultCellStyle.Font = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Regular, GraphicsUnit.Point);
+            dgvPoliza.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            dgvPoliza.DefaultCellStyle.Font = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Regular, GraphicsUnit.Point);
+            dgvPoliza.DefaultCellStyle.BackColor = Color.White;
+            dgvPoliza.DefaultCellStyle.ForeColor = Color.Black;
+            dgvPoliza.DefaultCellStyle.SelectionBackColor = Color.Yellow;
+            dgvPoliza.DefaultCellStyle.SelectionForeColor = Color.Black;
         }
 
-        private void PintarPoliza(IReadOnlyList<RegistroOperacion> registros)
+        private void LimpiarFormulario()
         {
-            RegistroOperacion encabezado = registros[0];
+            dgvPoliza.Rows.Clear();
 
-            string titulo = $"Póliza: {encabezado.Cuenta}  {encabezado.Descripcion}";
+            Text = "Póliza:";
+            lblTitulo.Text = "Póliza:";
+
+            lblTotalParcial.Text = string.Empty;
+            lblTotalDebe.Text = string.Empty;
+            lblTotalHaber.Text = string.Empty;
+
+            lblSumasIguales.Text = "SUMAS IGUALES";
+            lblSumasIguales.BackColor = Color.Gainsboro;
+            lblSumasIguales.ForeColor = Color.Black;
+        }
+
+        private void PintarPoliza(
+            IReadOnlyList<RegistroOperacion> registros)
+        {
+            RegistroOperacion encabezado = registros.FirstOrDefault(registro => registro.Identificador == "A") ?? registros[0];
+
+            string numeroPoliza = encabezado.Cuenta.Trim();
+            string nombrePoliza = encabezado.Descripcion.Trim();
+            string titulo = string.IsNullOrWhiteSpace(nombrePoliza) ? $"Póliza: {numeroPoliza}" : $"Póliza: {numeroPoliza} {nombrePoliza}";
 
             Text = titulo;
             lblTitulo.Text = titulo;
-
-            AgregarFilaEncabezado(encabezado);
 
             decimal totalDebe = 0m;
             decimal totalHaber = 0m;
@@ -110,99 +152,129 @@ namespace GaCostos
                     case "A":
                     case "D":
                         break;
-
                     case "B":
                         AgregarFilaCuentaMayor(registro, ref totalDebe, ref totalHaber);
                         break;
-
                     case "C":
                         AgregarFilaSubCuenta(registro);
                         break;
                 }
             }
 
-            AgregarFilaTotales(totalDebe, totalHaber);
-        }
-
-        private void AgregarFilaEncabezado(RegistroOperacion encabezado)
-        {
-            int indiceFila = dgvPoliza.Rows.Add(encabezado.Cuenta, string.Empty, encabezado.Descripcion, string.Empty, string.Empty, string.Empty, string.Empty);
-
-            DataGridViewRow fila = dgvPoliza.Rows[indiceFila];
-
-            fila.DefaultCellStyle.BackColor = Color.Gold;
-            fila.DefaultCellStyle.Font = new Font(dgvPoliza.Font, FontStyle.Bold);
+            ActualizarSumas(totalDebe, totalHaber);
+            dgvPoliza.ClearSelection();
         }
 
         private void AgregarFilaCuentaMayor(RegistroOperacion registro, ref decimal totalDebe, ref decimal totalHaber)
         {
             decimal importe = registro.Importe;
-            string debe = importe > 0 ? FormatHelper.FormatearImporte(importe) : string.Empty;
-            string haber = importe < 0 ? FormatHelper.FormatearImporte(Math.Abs(importe)) : string.Empty;
+            decimal? debe = importe > 0 ? importe : null;
+            decimal? haber = importe < 0 ? Math.Abs(importe) : null;
 
-            if (importe > 0)
-                totalDebe += importe;
+            if (debe.HasValue)
+                totalDebe += debe.Value;
 
-            if (importe < 0)
-                totalHaber += Math.Abs(importe);
+            if (haber.HasValue)
+                totalHaber += haber.Value;
 
-            int indiceFila = dgvPoliza.Rows.Add(registro.Cuenta, string.Empty, registro.Descripcion, string.Empty, debe, haber, string.Empty);
+            int indiceFila = dgvPoliza.Rows.Add(registro.Cuenta, string.Empty, registro.Descripcion, null, debe, haber, string.Empty);
+
             DataGridViewRow fila = dgvPoliza.Rows[indiceFila];
+
             fila.DefaultCellStyle.Font = new Font(dgvPoliza.Font, FontStyle.Bold);
+            fila.DefaultCellStyle.BackColor = Color.WhiteSmoke;
         }
 
         private void AgregarFilaSubCuenta(RegistroOperacion registro)
         {
-            decimal importe = registro.Importe;
-            string parcial = importe != 0 ? FormatHelper.FormatearImporte(importe) : string.Empty;
-            dgvPoliza.Rows.Add(string.Empty, registro.Cuenta, registro.Descripcion, parcial, string.Empty, string.Empty, registro.Descripcion);
-        }
-
-        private void AgregarFilaTotales(decimal totalDebe, decimal totalHaber)
-        {
-            int indiceFila = dgvPoliza.Rows.Add(string.Empty, string.Empty, "TOTALES", string.Empty, FormatHelper.FormatearImporte(totalDebe),
-                FormatHelper.FormatearImporte(totalHaber), string.Empty);
-
+            decimal? parcial = registro.Importe != 0m ? registro.Importe : null;
+            int indiceFila = dgvPoliza.Rows.Add(string.Empty, registro.Cuenta, registro.Descripcion, parcial, null, null, registro.Descripcion);
+            
             DataGridViewRow fila = dgvPoliza.Rows[indiceFila];
 
-            fila.DefaultCellStyle.BackColor = Color.Gainsboro;
-            fila.DefaultCellStyle.Font = new Font(dgvPoliza.Font, FontStyle.Bold);
+            fila.Cells["Nombre"].Style.Padding = new Padding(8, 0, 0, 0);
         }
 
-        private void AgregarColumna(string name, string headerText, int width)
+        private void ActualizarSumas(decimal totalDebe, decimal totalHaber)
         {
-            dgvPoliza.Columns.Add(new DataGridViewTextBoxColumn
+            lblTotalParcial.Text = string.Empty;
+            lblTotalDebe.Text = FormatHelper.FormatearImporte(totalDebe);
+            lblTotalHaber.Text = FormatHelper.FormatearImporte(totalHaber);
+
+            decimal debeRedondeado = decimal.Round(totalDebe, 2);
+            decimal haberRedondeado = decimal.Round(totalHaber, 2);
+            bool sumasIguales = debeRedondeado == haberRedondeado;
+
+            lblSumasIguales.Text = "SUMAS IGUALES";
+            lblSumasIguales.BackColor = sumasIguales ? Color.Gainsboro : Color.MistyRose;
+            lblSumasIguales.ForeColor = sumasIguales ? Color.Black : Color.DarkRed;
+        }
+
+        private void AgregarColumnaTexto(string name, string headerText, int width)
+        {
+            dgvPoliza.Columns.Add(
+                new DataGridViewTextBoxColumn
+                {
+                    Name = name,
+                    HeaderText = headerText,
+                    Width = width,
+                    MinimumWidth = 30,
+                    ReadOnly = true,
+                    SortMode = DataGridViewColumnSortMode.NotSortable
+                });
+        }
+
+        private void AgregarColumnaImporte(string name, string headerText, int width)
+        {
+            DataGridViewTextBoxColumn columna = new()
             {
                 Name = name,
                 HeaderText = headerText,
                 Width = width,
-                ReadOnly = true
-            });
-        }
+                MinimumWidth = 70,
+                ReadOnly = true,
+                ValueType = typeof(decimal),
+                SortMode = DataGridViewColumnSortMode.NotSortable
+            };
 
-        private void AlinearDerecha(string nombreColumna)
-        {
-            if (!dgvPoliza.Columns.Contains(nombreColumna))
-                return;
+            columna.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+            columna.DefaultCellStyle.Format = "N2";
+            columna.DefaultCellStyle.NullValue = string.Empty;
 
-            dgvPoliza.Columns[nombreColumna]!.DefaultCellStyle.Alignment =
-                DataGridViewContentAlignment.MiddleRight;
+            dgvPoliza.Columns.Add(columna);
         }
 
         private void CopiarSeleccion()
         {
             if (dgvPoliza.GetCellCount(DataGridViewElementStates.Selected) == 0)
+            {
                 return;
+            }
 
-            DataObject? data = dgvPoliza.GetClipboardContent();
+            DataObject? datos = dgvPoliza.GetClipboardContent();
 
-            if (data is not null)
-                Clipboard.SetDataObject(data);
+            if (datos is not null)
+            {
+                Clipboard.SetDataObject(datos, true);
+            }
         }
 
-        private void BtnCerrar_Click(object? sender, EventArgs e)
+        private void SeleccionarTodo()
         {
-            Close();
+            if (dgvPoliza.Rows.Count == 0)
+                return;
+
+            dgvPoliza.SelectAll();
+        }
+
+        private void MenuCopiarSeleccion_Click(object? sender, EventArgs e)
+        {
+            CopiarSeleccion();
+        }
+
+        private void MenuSeleccionarTodo_Click(object? sender, EventArgs e)
+        {
+            SeleccionarTodo();
         }
 
         private void DgvPoliza_KeyDown(object? sender, KeyEventArgs e)
@@ -210,6 +282,8 @@ namespace GaCostos
             if (e.KeyCode == Keys.Escape)
             {
                 e.Handled = true;
+                e.SuppressKeyPress = true;
+
                 Close();
                 return;
             }
@@ -217,7 +291,18 @@ namespace GaCostos
             if (e.Control && e.KeyCode == Keys.C)
             {
                 e.Handled = true;
+                e.SuppressKeyPress = true;
+
                 CopiarSeleccion();
+                return;
+            }
+
+            if (e.Control && e.KeyCode == Keys.A)
+            {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+
+                SeleccionarTodo();
             }
         }
     }

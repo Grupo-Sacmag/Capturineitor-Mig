@@ -1,13 +1,13 @@
 using CapturaDePolizas_2026_NET8;
+using CapturaDePolizas_2026_NET8.Business;
 using GaCostos.Models;
 using GaCostos.Services;
-using GaCostos.Utils;
 using System.ComponentModel;
 using System.Text;
 
 namespace GaCostos
 {
-    public partial class FormPrincipal : Form
+    public partial class FormAuxiliar : Form
     {
         private readonly ConfigService _configService;
         private readonly ContabilidadService _contabilidadService;
@@ -25,7 +25,7 @@ namespace GaCostos
 
         private bool _cierreConfirmado;
 
-        public FormPrincipal()
+        public FormAuxiliar()
         {
             _configService = new ConfigService();
             _contabilidadService = new ContabilidadService();
