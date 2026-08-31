@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,6 +12,8 @@ namespace CapturaDePolizas_2026_NET8.Entities
         public string Nombre { get; set; } = string.Empty;
         public decimal MontoBruto { get; set; }
         public int NumSubcuentas { get; set; }
+        public string? TipoCuenta { get; set; }
+        public string? Clasificacion { get; set; }
         public ICollection<Subcuenta> Subcuentas { get; set; } = new List<Subcuenta>();
     }
 }

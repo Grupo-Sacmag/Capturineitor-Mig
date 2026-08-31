@@ -1,18 +1,26 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\desarrollo.conta\\Desktop\\ReposGitHub\\CAP \u002B AUX C# 2026\\",
+  "WorkspaceRootPath": "D:\\Proyectos\\Captura\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|c:\\users\\desarrollo.conta\\desktop\\reposgithub\\cap \u002B aux c# 2026\\formpolizadiario.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|d:\\proyectos\\captura\\formpolizadiario.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|solutionrelative:formpolizadiario.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|c:\\users\\desarrollo.conta\\desktop\\reposgithub\\cap \u002B aux c# 2026\\formpolizadiario.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "AbsoluteMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|d:\\proyectos\\captura\\formbuscarcatalogo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|solutionrelative:formbuscarcatalogo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|D:\\Proyectos\\Captura\\formpolizadiario.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
       "RelativeMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|solutionrelative:formpolizadiario.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|c:\\users\\desarrollo.conta\\desktop\\reposgithub\\cap \u002B aux c# 2026\\formpolizadiario.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|d:\\proyectos\\captura\\formpolizadiario.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|solutionrelative:formpolizadiario.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|d:\\proyectos\\captura\\formcaptura.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|solutionrelative:formcaptura.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
     }
   ],
   "DocumentGroupContainers": [
@@ -21,16 +29,16 @@
       "VerticalTabListWidth": 256,
       "DocumentGroups": [
         {
-          "DockedWidth": 43,
+          "DockedWidth": 332,
           "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "FormPolizaDiario.cs [Dise\u00F1o]",
-              "DocumentMoniker": "C:\\Users\\desarrollo.conta\\Desktop\\ReposGitHub\\CAP \u002B AUX C# 2026\\FormPolizaDiario.cs",
+              "DocumentMoniker": "D:\\Proyectos\\Captura\\FormPolizaDiario.cs",
               "RelativeDocumentMoniker": "FormPolizaDiario.cs",
-              "ToolTip": "C:\\Users\\desarrollo.conta\\Desktop\\ReposGitHub\\CAP \u002B AUX C# 2026\\FormPolizaDiario.cs [Dise\u00F1o]",
+              "ToolTip": "D:\\Proyectos\\Captura\\FormPolizaDiario.cs [Dise\u00F1o]",
               "RelativeToolTip": "FormPolizaDiario.cs [Dise\u00F1o]",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-07-14T00:49:54.195Z",
@@ -41,11 +49,11 @@
               "$type": "Document",
               "DocumentIndex": 0,
               "Title": "FormPolizaDiario.cs",
-              "DocumentMoniker": "C:\\Users\\desarrollo.conta\\Desktop\\ReposGitHub\\CAP \u002B AUX C# 2026\\FormPolizaDiario.cs",
+              "DocumentMoniker": "D:\\Proyectos\\Captura\\FormPolizaDiario.cs",
               "RelativeDocumentMoniker": "FormPolizaDiario.cs",
-              "ToolTip": "C:\\Users\\desarrollo.conta\\Desktop\\ReposGitHub\\CAP \u002B AUX C# 2026\\FormPolizaDiario.cs",
+              "ToolTip": "D:\\Proyectos\\Captura\\FormPolizaDiario.cs",
               "RelativeToolTip": "FormPolizaDiario.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAACwBAAANAAAAAAAAAA==",
+              "ViewState": "AgIAABQAAAAAAAAAAAAAACIAAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-07-13T23:37:31.779Z",
               "IsPinned": true,
@@ -53,17 +61,71 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "FormPolizaDiario.Designer.cs",
-              "DocumentMoniker": "C:\\Users\\desarrollo.conta\\Desktop\\ReposGitHub\\CAP \u002B AUX C# 2026\\FormPolizaDiario.Designer.cs",
+              "DocumentMoniker": "D:\\Proyectos\\Captura\\FormPolizaDiario.Designer.cs",
               "RelativeDocumentMoniker": "FormPolizaDiario.Designer.cs",
-              "ToolTip": "C:\\Users\\desarrollo.conta\\Desktop\\ReposGitHub\\CAP \u002B AUX C# 2026\\FormPolizaDiario.Designer.cs",
+              "ToolTip": "D:\\Proyectos\\Captura\\FormPolizaDiario.Designer.cs",
               "RelativeToolTip": "FormPolizaDiario.Designer.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAADkAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAxwCIAAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-07-14T00:43:15.299Z",
               "IsPinned": true,
               "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:129:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{75188d03-9892-4ae2-abf1-207126247ce5}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "FormBuscarCatalogo.cs [Dise\u00F1o]",
+              "DocumentMoniker": "D:\\Proyectos\\Captura\\FormBuscarCatalogo.cs",
+              "RelativeDocumentMoniker": "FormBuscarCatalogo.cs",
+              "ToolTip": "D:\\Proyectos\\Captura\\FormBuscarCatalogo.cs [Dise\u00F1o]",
+              "RelativeToolTip": "FormBuscarCatalogo.cs [Dise\u00F1o]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-31T19:13:34.647Z",
+              "EditorCaption": " [Dise\u00F1o]"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "FormCaptura.cs [Dise\u00F1o]",
+              "DocumentMoniker": "D:\\Proyectos\\Captura\\FormCaptura.cs",
+              "RelativeDocumentMoniker": "FormCaptura.cs",
+              "ToolTip": "D:\\Proyectos\\Captura\\FormCaptura.cs [Dise\u00F1o]",
+              "RelativeToolTip": "FormCaptura.cs [Dise\u00F1o]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-31T19:13:35.844Z",
+              "EditorCaption": " [Dise\u00F1o]"
+            }
+          ]
+        },
+        {
+          "DockedWidth": 68,
+          "SelectedChildIndex": -1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{b1e99781-ab81-11d0-b683-00aa00a3ee26}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{eefa5220-e298-11d0-8f78-00a0c9110057}"
             }
           ]
         }

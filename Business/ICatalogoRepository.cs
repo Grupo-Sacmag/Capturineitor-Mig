@@ -1,4 +1,4 @@
-﻿using CapturaDePolizas_2026_NET8.Models;
+using CapturaDePolizas_2026_NET8.Models;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -22,5 +22,6 @@ namespace CapturaDePolizas_2026_NET8.Repositories
         DataTable ObtenerTablaPolizas();
         DataTable ObtenerMovimientosPoliza(int polizaId);
         DataTable ObtenerTablaVacia();
+        DataTable ObtenerEstadosFinancieros(bool incluirCuentasOrden);
     }
 }

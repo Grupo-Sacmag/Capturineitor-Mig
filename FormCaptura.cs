@@ -1,4 +1,4 @@
-﻿using CapturaDePolizas_2026_NET8.Models;
+using CapturaDePolizas_2026_NET8.Models;
 using CapturaDePolizas_2026_NET8.Repositories;
 using GaCostos;
 using System.Data;
@@ -438,9 +438,15 @@ public partial class FormCaptura : Form
     {
         try
         {
-            DataTable datos = _catalogoRepository.ObtenerTablaVacia();
+            var result = MessageBox.Show("¿Quieres incluir las cuentas de orden?", "Estados Financieros", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+            if (result == DialogResult.Cancel)
+                return;
+                
+            bool incluirCuentasOrden = result == DialogResult.Yes;
 
-            using FormVerGrid form = new("Estados Financieros", datos);
+            DataTable datos = _catalogoRepository.ObtenerEstadosFinancieros(incluirCuentasOrden);
+
+            using FormReporteBalance form = new(datos);
             form.ShowDialog(this);
         }
         catch (Exception ex)

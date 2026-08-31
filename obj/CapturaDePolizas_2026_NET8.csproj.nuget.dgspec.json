@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\desarrollo.conta\\Desktop\\ReposGitHub\\CAP + AUX C# 2026\\CapturaDePolizas_2026_NET8.csproj": {}
+    "D:\\Proyectos\\Captura\\CapturaDePolizas_2026_NET8.csproj": {}
   },
   "projects": {
-    "C:\\Users\\desarrollo.conta\\Desktop\\ReposGitHub\\CAP + AUX C# 2026\\CapturaDePolizas_2026_NET8.csproj": {
+    "D:\\Proyectos\\Captura\\CapturaDePolizas_2026_NET8.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\desarrollo.conta\\Desktop\\ReposGitHub\\CAP + AUX C# 2026\\CapturaDePolizas_2026_NET8.csproj",
+        "projectUniqueName": "D:\\Proyectos\\Captura\\CapturaDePolizas_2026_NET8.csproj",
         "projectName": "CapturaDePolizas_2026_NET8",
-        "projectPath": "C:\\Users\\desarrollo.conta\\Desktop\\ReposGitHub\\CAP + AUX C# 2026\\CapturaDePolizas_2026_NET8.csproj",
-        "packagesPath": "C:\\Users\\desarrollo.conta\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\desarrollo.conta\\Desktop\\ReposGitHub\\CAP + AUX C# 2026\\obj\\",
+        "projectPath": "D:\\Proyectos\\Captura\\CapturaDePolizas_2026_NET8.csproj",
+        "packagesPath": "C:\\Users\\david.albino\\.nuget\\packages\\",
+        "outputPath": "D:\\Proyectos\\Captura\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\desarrollo.conta\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\david.albino\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -26,6 +26,7 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
