@@ -17,9 +17,6 @@
         private Label lblRuta = null!;
         private Button btnRegresar = null!;
 
-        private ToolStripLabel lblOrigenDatos = null!;
-        private ToolStripComboBox cmbOrigenDatos = null!;
-
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
@@ -45,8 +42,6 @@
             menuDGVSinEncabezados = new ToolStripMenuItem();
             menuSeleccionFilaCompleta = new ToolStripMenuItem();
             menuVersion = new ToolStripMenuItem();
-            cmbOrigenDatos = new ToolStripComboBox();
-            lblOrigenDatos = new ToolStripLabel();
             dgvPrincipal = new DataGridView();
             colCuenta = new DataGridViewTextBoxColumn();
             colNombre = new DataGridViewTextBoxColumn();
@@ -70,11 +65,11 @@
             // menuStripPrincipal
             // 
             menuStripPrincipal.ImageScalingSize = new Size(20, 20);
-            menuStripPrincipal.Items.AddRange(new ToolStripItem[] { menuArchivo, menuEdicion, menuVersion, cmbOrigenDatos, lblOrigenDatos });
+            menuStripPrincipal.Items.AddRange(new ToolStripItem[] { menuArchivo, menuEdicion, menuVersion });
             menuStripPrincipal.Location = new Point(0, 0);
             menuStripPrincipal.Name = "menuStripPrincipal";
             menuStripPrincipal.Padding = new Padding(5, 2, 0, 2);
-            menuStripPrincipal.Size = new Size(998, 27);
+            menuStripPrincipal.Size = new Size(998, 24);
             menuStripPrincipal.TabIndex = 0;
             menuStripPrincipal.Text = "menuStripPrincipal";
             // 
@@ -82,7 +77,7 @@
             // 
             menuArchivo.DropDownItems.AddRange(new ToolStripItem[] { menuActualizar, menuCambiarSubdirectorio, menuVerificarArchivos });
             menuArchivo.Name = "menuArchivo";
-            menuArchivo.Size = new Size(60, 23);
+            menuArchivo.Size = new Size(60, 20);
             menuArchivo.Text = "Archivo";
             // 
             // menuActualizar
@@ -107,7 +102,7 @@
             // 
             menuEdicion.DropDownItems.AddRange(new ToolStripItem[] { menuSeleccionarYCopiarTodo, menuSeleccionFilaCompleta });
             menuEdicion.Name = "menuEdicion";
-            menuEdicion.Size = new Size(58, 23);
+            menuEdicion.Size = new Size(58, 20);
             menuEdicion.Text = "Edición";
             // 
             // menuSeleccionarYCopiarTodo
@@ -146,25 +141,9 @@
             // menuVersion
             // 
             menuVersion.Name = "menuVersion";
-            menuVersion.Size = new Size(57, 23);
+            menuVersion.Size = new Size(57, 20);
             menuVersion.Text = "Versión";
             menuVersion.Click += MenuVersion_Click;
-            // 
-            // cmbOrigenDatos
-            // 
-            cmbOrigenDatos.Alignment = ToolStripItemAlignment.Right;
-            cmbOrigenDatos.AutoSize = false;
-            cmbOrigenDatos.DropDownStyle = ComboBoxStyle.DropDownList;
-            cmbOrigenDatos.Name = "cmbOrigenDatos";
-            cmbOrigenDatos.Size = new Size(110, 23);
-            cmbOrigenDatos.SelectedIndexChanged += cmbOrigenDatos_SelectedIndexChanged;
-            // 
-            // lblOrigenDatos
-            // 
-            lblOrigenDatos.Alignment = ToolStripItemAlignment.Right;
-            lblOrigenDatos.Name = "lblOrigenDatos";
-            lblOrigenDatos.Size = new Size(46, 20);
-            lblOrigenDatos.Text = "Origen:";
             // 
             // dgvPrincipal
             // 
@@ -176,14 +155,14 @@
             dgvPrincipal.ClipboardCopyMode = DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
             dgvPrincipal.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             dgvPrincipal.Columns.AddRange(new DataGridViewColumn[] { colCuenta, colNombre, colSaldo, colRangoInferior, colRangoSuperior, colGuia, colFecha, colPoliza, colConcepto, colDebe, colHaber });
-            dgvPrincipal.Location = new Point(10, 77);
+            dgvPrincipal.Location = new Point(10, 68);
             dgvPrincipal.Margin = new Padding(3, 2, 3, 2);
             dgvPrincipal.Name = "dgvPrincipal";
             dgvPrincipal.ReadOnly = true;
             dgvPrincipal.RowHeadersWidth = 51;
             dgvPrincipal.RowTemplate.Height = 29;
             dgvPrincipal.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvPrincipal.Size = new Size(976, 442);
+            dgvPrincipal.Size = new Size(976, 420);
             dgvPrincipal.TabIndex = 1;
             dgvPrincipal.CellFormatting += dgvPrincipal_CellFormatting;
             dgvPrincipal.DataBindingComplete += dgvPrincipal_DataBindingComplete;
@@ -271,15 +250,15 @@
             // 
             lblRuta.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             lblRuta.AutoEllipsis = true;
-            lblRuta.Location = new Point(82, 57);
+            lblRuta.Location = new Point(213, 39);
             lblRuta.Name = "lblRuta";
-            lblRuta.Size = new Size(904, 18);
+            lblRuta.Size = new Size(773, 18);
             lblRuta.TabIndex = 2;
             lblRuta.Text = "Ruta de datos no configurada.";
             // 
             // btnRegresar
             // 
-            btnRegresar.Location = new Point(898, 26);
+            btnRegresar.Location = new Point(898, 32);
             btnRegresar.Margin = new Padding(3, 2, 3, 2);
             btnRegresar.Name = "btnRegresar";
             btnRegresar.Size = new Size(88, 29);
@@ -291,7 +270,7 @@
             // 
             label1.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             label1.AutoEllipsis = true;
-            label1.Location = new Point(12, 57);
+            label1.Location = new Point(143, 39);
             label1.Name = "label1";
             label1.Size = new Size(64, 18);
             label1.TabIndex = 4;
@@ -299,7 +278,7 @@
             // 
             // btnVolverACaptura
             // 
-            btnVolverACaptura.Location = new Point(10, 26);
+            btnVolverACaptura.Location = new Point(12, 38);
             btnVolverACaptura.Name = "btnVolverACaptura";
             btnVolverACaptura.Size = new Size(107, 23);
             btnVolverACaptura.TabIndex = 5;
@@ -307,11 +286,11 @@
             btnVolverACaptura.UseVisualStyleBackColor = true;
             btnVolverACaptura.Click += btnVolverACaptura_Click;
             // 
-            // FormAuxiliar
+            // FormPrincipal
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(998, 526);
+            ClientSize = new Size(998, 495);
             Controls.Add(btnVolverACaptura);
             Controls.Add(label1);
             Controls.Add(btnRegresar);
@@ -322,7 +301,7 @@
             MainMenuStrip = menuStripPrincipal;
             Margin = new Padding(3, 2, 3, 2);
             MinimumSize = new Size(790, 430);
-            Name = "FormAuxiliar";
+            Name = "FormPrincipal";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Costos 2026";
             FormClosing += FormPrincipal_FormClosing;

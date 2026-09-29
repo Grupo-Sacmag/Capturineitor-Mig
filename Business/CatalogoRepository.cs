@@ -1,32 +1,19 @@
-﻿using CapturaDePolizas_2026_NET8.Context;
+using CapturaDePolizas_2026_NET8.Context;
 using CapturaDePolizas_2026_NET8.Entities;
 using CapturaDePolizas_2026_NET8.Models;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
+using System.Globalization;
 
 namespace CapturaDePolizas_2026_NET8.Repositories
 {
     public class CatalogoRepository : ICatalogoRepository
     {
-        public bool PuedeConectarBaseDatos()
-        {
-            try
-            {
-                using var db = new EmpresaDbContext();
-
-                return db.Database.CanConnect();
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
         public bool ValidarCuenta(string cuentaId, out string nombreCuenta)
         {
             nombreCuenta = string.Empty;
@@ -312,6 +299,89 @@ namespace CapturaDePolizas_2026_NET8.Repositories
             return tabla;
         }
 
+        public DataTable ObtenerEstadosFinancieros(bool incluirCuentasOrden)
+        {
+            DataTable tabla = new();
+            tabla.Columns.Add("Activo", typeof(string));
+            tabla.Columns.Add("Monto Activo", typeof(string));
+            tabla.Columns.Add("Pasivo y Capital", typeof(string));
+            tabla.Columns.Add("Monto Pasivo", typeof(string));
+
+            using var db = new EmpresaDbContext();
+            var cuentas = db.Cuentas.AsNoTracking().ToList();
+
+            var activos = cuentas.Where(c => c.TipoCuenta?.ToUpper() == "ACTIVO" && c.MontoBruto != 0).ToList();
+            var pasivos = cuentas.Where(c => c.TipoCuenta?.ToUpper() == "PASIVO" && c.MontoBruto != 0).ToList();
+            var capital = cuentas.Where(c => c.TipoCuenta?.ToUpper() == "CAPITAL" && c.MontoBruto != 0).ToList();
+            var orden = cuentas.Where(c => (c.TipoCuenta?.ToUpper() == "CUENTAS DE ORDEN" || c.TipoCuenta?.ToUpper() == "ORDEN") && c.MontoBruto != 0).ToList();
+
+            string[] clasificaciones = new[] { "CIRCULANTE", "FIJO", "DIFERIDO" };
+
+            var lineasActivo = new List<(string Concepto, string Monto)>();
+            lineasActivo.Add(("A C T I V O", ""));
+            lineasActivo.AddRange(GenerarLineasLado(activos, clasificaciones, out decimal totalActivo));
+            lineasActivo.Add(("Suma Activo", totalActivo.ToString("N2")));
+
+            var lineasPasivoCapital = new List<(string Concepto, string Monto)>();
+            lineasPasivoCapital.Add(("P A S I V O", ""));
+            lineasPasivoCapital.AddRange(GenerarLineasLado(pasivos, clasificaciones, out decimal totalPasivo));
+            lineasPasivoCapital.Add(("Suma Pasivo", totalPasivo.ToString("N2")));
+            lineasPasivoCapital.Add(("", ""));
+            lineasPasivoCapital.Add(("HABER", ""));
+            lineasPasivoCapital.Add(("SOCIAL", ""));
+
+            decimal totalCapital = 0;
+            foreach (var cap in capital)
+            {
+                lineasPasivoCapital.Add((cap.Id + " " + cap.Nombre, cap.MontoBruto.ToString("N2")));
+                totalCapital += cap.MontoBruto;
+            }
+            lineasPasivoCapital.Add(("Suma Pasivo y Haber Soc", (totalPasivo + totalCapital).ToString("N2")));
+
+            int maxLines = Math.Max(lineasActivo.Count, lineasPasivoCapital.Count);
+            for (int i = 0; i < maxLines; i++)
+            {
+                var izq = i < lineasActivo.Count ? lineasActivo[i] : (Concepto: "", Monto: "");
+                var der = i < lineasPasivoCapital.Count ? lineasPasivoCapital[i] : (Concepto: "", Monto: "");
+                tabla.Rows.Add(izq.Concepto, izq.Monto, der.Concepto, der.Monto);
+            }
+
+            if (incluirCuentasOrden)
+            {
+                tabla.Rows.Add("", "", "", "");
+                tabla.Rows.Add("CUENTAS DE ORDEN", "", "", "");
+                foreach (var ord in orden)
+                {
+                    tabla.Rows.Add(ord.Id + " " + ord.Nombre, ord.MontoBruto.ToString("N2"), "", "");
+                }
+            }
+
+            return tabla;
+        }
+
+        private List<(string Concepto, string Monto)> GenerarLineasLado(List<Cuenta> cuentas, string[] ordenClasificaciones, out decimal granTotal)
+        {
+            var lineas = new List<(string Concepto, string Monto)>();
+            granTotal = 0;
+
+            foreach (var clasif in ordenClasificaciones)
+            {
+                var cuentasClasif = cuentas.Where(c => c.Clasificacion?.ToUpper() == clasif).ToList();
+                if (cuentasClasif.Any())
+                {
+                    lineas.Add((CultureInfo.CurrentCulture.TextInfo.ToTitleCase(clasif.ToLower()), ""));
+                    decimal subtotal = 0;
+                    foreach (var c in cuentasClasif)
+                    {
+                        lineas.Add((c.Id + " " + c.Nombre, c.MontoBruto.ToString("N2")));
+                        subtotal += c.MontoBruto;
+                    }
+                    granTotal += subtotal;
+                }
+            }
+            return lineas;
+        }
+
         private static Poliza CrearPolizaEntity(PolizaModel model)
         {
             return new Poliza
@@ -425,199 +495,5 @@ namespace CapturaDePolizas_2026_NET8.Repositories
 
             return tabla;
         }
-
-        public IReadOnlyList<CuentaAuxiliarDbDto>ObtenerCuentasParaAuxiliares()
-        {
-            using var db = new EmpresaDbContext();
-
-            var datos = db.Cuentas.AsNoTracking().OrderBy(cuenta => cuenta.Id).Select(cuenta => new
-                {
-                    cuenta.Id,
-                    cuenta.Nombre,
-                    Saldo = cuenta.MontoBruto,
-                    cuenta.NumSubcuentas
-                }).ToList();
-
-            return datos.Select(cuenta => new CuentaAuxiliarDbDto(
-                    Id: cuenta.Id,
-                    Nombre: cuenta.Nombre?.ToUpper() ?? string.Empty,
-                    Saldo: cuenta.Saldo,
-                    NumeroSubcuentas: cuenta.NumSubcuentas)).ToList();
-        }
-
-        public IReadOnlyList<SubcuentaAuxiliarDbDto>ObtenerSubcuentasParaAuxiliares(int cuentaId)
-        {
-            using var db = new EmpresaDbContext();
-
-            var datos = db.Subcuentas.AsNoTracking().Where(subcuenta => subcuenta.CuentaId == cuentaId && subcuenta.Activa).OrderBy(subcuenta => subcuenta.Id).
-                Select(subcuenta => new
-                {
-                    subcuenta.Id,
-                    subcuenta.CuentaId,
-                    subcuenta.Nombre,
-                    Saldo = subcuenta.ImporteNeto
-                }).ToList();
-
-            return datos.Select(subcuenta => new SubcuentaAuxiliarDbDto(
-                    Id: subcuenta.Id,
-                    CuentaId: subcuenta.CuentaId,
-                    Nombre: subcuenta.Nombre?.ToUpper() ?? string.Empty,
-                    Saldo: subcuenta.Saldo)).ToList();
-        }
-
-        public ResultadoAuxiliarDbDto ObtenerMovimientosParaAuxiliar(
-            int cuentaId,
-            int? subcuentaId,
-            int mesProceso = 0)
-        {
-            using var db = new EmpresaDbContext();
-            var consulta = 
-                from movimiento in db.Movimientos.AsNoTracking() join poliza in db.Polizas.AsNoTracking() on movimiento.PolizaId equals poliza.Id where movimiento.CuentaId == cuentaId
-                select new
-                {
-                    MovimientoId = movimiento.Id,
-                    movimiento.PolizaId,
-                    poliza.Fecha,
-                    poliza.Folio,
-                    ConceptoPoliza = poliza.Concepto,
-                    movimiento.SubcuentaId,
-                    movimiento.Parcial,
-                    movimiento.Debe,
-                    movimiento.Haber,
-                    movimiento.Redaccion
-                };
-
-            if (subcuentaId.HasValue)
-            {
-                consulta = consulta.Where(registro => registro.SubcuentaId == subcuentaId.Value);
-            }
-            else
-            {
-                // Cuenta sin subcuenta: movimiento directo.
-                consulta = consulta.Where(registro => registro.SubcuentaId == null);
-            }
-
-            var registros = consulta.OrderBy(registro => registro.Fecha).ThenBy(registro => registro.Folio).ThenBy(registro => registro.MovimientoId).ToList();
-
-            decimal ObtenerImporte(
-                decimal parcial,
-                decimal debe,
-                decimal haber)
-            {
-                return subcuentaId.HasValue ? parcial : debe - haber;
-            }
-
-            decimal saldoInicial = 0m;
-
-            if (mesProceso is >= 1 and <= 12)
-            {
-                saldoInicial = registros.Where(registro => registro.Fecha.Month < mesProceso).Sum(registro => ObtenerImporte(
-                    registro.Parcial,
-                    registro.Debe,
-                    registro.Haber));
-                registros = registros.Where(registro => registro.Fecha.Month == mesProceso).ToList();
-            }
-
-            decimal saldoAcumulado = saldoInicial;
-
-            List<MovimientoAuxiliarDbDto> movimientos = [];
-
-            foreach (var registro in registros)
-            {
-                decimal importe = ObtenerImporte(
-                    registro.Parcial,
-                    registro.Debe,
-                    registro.Haber);
-
-                saldoAcumulado += importe;
-
-                string concepto = string.IsNullOrWhiteSpace(registro.Redaccion) ? registro.ConceptoPoliza : registro.Redaccion;
-
-                movimientos.Add(new MovimientoAuxiliarDbDto(
-                    MovimientoId: registro.MovimientoId,
-                    PolizaId: registro.PolizaId,
-                    Fecha: registro.Fecha,
-                    Folio: registro.Folio,
-                    Concepto: concepto?.ToUpper() ?? string.Empty,
-                    Importe: importe,
-                    SaldoAcumulado: saldoAcumulado));
-            }
-
-            return new ResultadoAuxiliarDbDto(SaldoInicial: saldoInicial, Movimientos: movimientos);
-        }
-
-        public PolizaAuxiliarDbDto? ObtenerPolizaParaAuxiliar(int polizaId)
-        {
-            using var db = new EmpresaDbContext();
-
-            var encabezado = db.Polizas.AsNoTracking().Where(poliza => poliza.Id == polizaId).Select(poliza => new
-                {
-                    poliza.Id,
-                    poliza.Fecha,
-                    poliza.Folio,
-                    poliza.Concepto,
-                    poliza.TotalDebe,
-                    poliza.TotalHaber
-                }).FirstOrDefault();
-
-            if (encabezado is null)
-                return null;
-
-            var datos =
-                (
-                from movimiento in db.Movimientos.AsNoTracking()
-                join cuenta in db.Cuentas.AsNoTracking()
-                on movimiento.CuentaId equals cuenta.Id
-                join subcuenta in db.Subcuentas.AsNoTracking()
-                on new
-                {
-                    CuentaId = movimiento.CuentaId,
-                    SubcuentaId = movimiento.SubcuentaId ?? -1
-                }
-                equals new
-                {
-                    CuentaId = subcuenta.CuentaId,
-                    SubcuentaId = subcuenta.Id
-                }
-                into subcuentasJoin
-                from subcuenta in subcuentasJoin.DefaultIfEmpty()
-                where movimiento.PolizaId == polizaId
-                orderby movimiento.Id
-                select new
-                {
-                    MovimientoId = movimiento.Id,
-                    movimiento.CuentaId,
-                    movimiento.SubcuentaId,
-                    NombreCuenta = cuenta.Nombre,
-                    NombreSubcuenta = subcuenta != null ? subcuenta.Nombre : string.Empty,
-                    movimiento.Parcial,
-                    movimiento.Debe,
-                    movimiento.Haber,
-                    movimiento.Redaccion
-                }
-                ).ToList();
-
-            List<MovimientoPolizaDbDto> movimientos = datos.Select(movimiento => new MovimientoPolizaDbDto(
-                MovimientoId: movimiento.MovimientoId,
-                CuentaId: movimiento.CuentaId,
-                SubcuentaId: movimiento.SubcuentaId,
-                NombreCuenta: movimiento.NombreCuenta?.ToUpper() ?? string.Empty,
-                NombreSubcuenta: movimiento.NombreSubcuenta?.ToUpper() ?? string.Empty,
-                Parcial: movimiento.Parcial,
-                Debe: movimiento.Debe,
-                Haber: movimiento.Haber,
-                Redaccion: movimiento.Redaccion?.ToUpper() ?? string.Empty)).ToList();
-
-            return new PolizaAuxiliarDbDto(
-                Id: encabezado.Id,
-                Fecha: encabezado.Fecha,
-                Folio: encabezado.Folio,
-                Concepto: encabezado.Concepto?.ToUpper() ?? string.Empty,
-                TotalDebe: encabezado.TotalDebe,
-                TotalHaber: encabezado.TotalHaber,
-                Movimientos: movimientos);
-        }
-
-
     }
 }
