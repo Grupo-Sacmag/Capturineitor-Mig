@@ -166,7 +166,6 @@
             dgvPrincipal.TabIndex = 1;
             dgvPrincipal.CellFormatting += dgvPrincipal_CellFormatting;
             dgvPrincipal.DataBindingComplete += dgvPrincipal_DataBindingComplete;
-            dgvPrincipal.KeyDown += dgvPrincipal_KeyDown_1;
             // 
             // colCuenta
             // 

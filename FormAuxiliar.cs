@@ -9,30 +9,44 @@ namespace GaCostos
 {
     public partial class FormAuxiliar : Form
     {
+        private readonly bool _modoConsulta;        // abierto desde Estados Financieros
+        private string _contextoConsulta = "";      // "Cuenta: 1100 Activo circulante"
+        private string _contextoSubcuenta = "";
         private readonly ConfigService _configService;
         private readonly ContabilidadService _contabilidadService;
         private readonly BindingSource _bindingSource = new();
-
         private string? _rutaDatos;
-
         private NivelNavegacion _nivelActual = NivelNavegacion.CatalogoMayor;
-
         private int _filaCatalogoMayor;
         private int _filaCatalogoAuxiliar;
-
         private int _rangoInferiorActual;
         private int _rangoSuperiorActual;
-
         private bool _cierreConfirmado;
 
-        public FormAuxiliar()
+        public FormAuxiliar() : this(modoConsulta : false)
         {
+
+        }
+        
+        public FormAuxiliar(int rangoInferior, int rangoSuperior, string contexto) : this(modoConsulta: true)
+        {
+            _rangoInferiorActual = rangoInferior;
+            _rangoSuperiorActual = rangoSuperior;
+            _contextoConsulta = contexto;
+
+            Load += (_, _) => IniciarModoConsulta();
+        }
+        private FormAuxiliar(bool modoConsulta)
+        {
+            _modoConsulta = modoConsulta;
             _configService = new ConfigService();
             _contabilidadService = new ContabilidadService();
 
             InitializeComponent();
             InicializarFormulario();
-            CargarRutaInicial();
+
+            if (!modoConsulta)
+                CargarRutaInicial();
         }
 
         private void InicializarFormulario()
@@ -47,8 +61,7 @@ namespace GaCostos
             dgvPrincipal.ColumnHeadersDefaultCellStyle.BackColor = Color.Gainsboro;
             dgvPrincipal.ColumnHeadersDefaultCellStyle.Font = new Font(dgvPrincipal.Font, FontStyle.Bold);
 
-            dgvPrincipal.CellDoubleClick += DgvPrincipal_CellDoubleClick;
-            dgvPrincipal.KeyDown += DgvPrincipal_KeyDown;
+            dgvPrincipal.CellDoubleClick += DgvPrincipal_CellDoubleClick;            
 
             btnRegresar.Click += BtnRegresar_Click;
 
@@ -69,7 +82,7 @@ namespace GaCostos
 
         private void FormPrincipal_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if (_cierreConfirmado)
+            if (_cierreConfirmado || _modoConsulta)
                 return;
 
             // No preguntar cuando Windows o la aplicación completa
@@ -154,13 +167,9 @@ namespace GaCostos
             try
             {
                 IReadOnlyList<CuentaMayor> cuentas = _contabilidadService.ObtenerCatalogoMayor(_rutaDatos!);
-
                 _nivelActual = NivelNavegacion.CatalogoMayor;
-
                 ConfigurarColumnasCatalogoMayor();
-
                 _bindingSource.DataSource = new BindingList<CuentaMayor>(cuentas.ToList());
-
                 dgvPrincipal.Visible = true;
                 lblRuta.Text = _rutaDatos!;
             }
@@ -178,17 +187,13 @@ namespace GaCostos
             try
             {
                 IReadOnlyList<CuentaAuxiliar> cuentas = _contabilidadService.ObtenerCatalogoAuxiliar(_rutaDatos!, rangoInferior, rangoSuperior);
-
                 _nivelActual = NivelNavegacion.CatalogoAuxiliar;
-
                 _rangoInferiorActual = rangoInferior;
                 _rangoSuperiorActual = rangoSuperior;
-
                 ConfigurarColumnasCatalogoAuxiliar();
-
                 _bindingSource.DataSource = new BindingList<CuentaAuxiliar>(cuentas.ToList());
-
                 dgvPrincipal.Visible = true;
+                ActualizarContexto();
             }
             catch (Exception ex)
             {
@@ -204,16 +209,12 @@ namespace GaCostos
             try
             {
                 AuxiliarResultado resultado = _contabilidadService.ObtenerMovimientosAuxiliar(_rutaDatos!, guia, mesProceso: 0);
-
                 List<MovimientoAuxiliarGridRow> movimientos = resultado.Movimientos.Select(MovimientoAuxiliarGridRow.FromMovimiento).ToList();
-
                 _nivelActual = NivelNavegacion.Auxiliar;
-
                 ConfigurarColumnasMovimientosAuxiliar();
-
                 _bindingSource.DataSource = new BindingList<MovimientoAuxiliarGridRow>(movimientos);
-
                 dgvPrincipal.Visible = true;
+                ActualizarContexto();
             }
             catch (Exception ex)
             {
@@ -265,6 +266,8 @@ namespace GaCostos
 
             _filaCatalogoAuxiliar = dgvPrincipal.CurrentRow.Index;
 
+            _contextoSubcuenta = $"{TextoFila("colCuenta")} {TextoFila("colNombre")}".Trim();
+
             CargarMovimientosAuxiliar(cuenta.Guia);
         }
 
@@ -299,13 +302,17 @@ namespace GaCostos
                     break;
 
                 case NivelNavegacion.CatalogoAuxiliar:
+                    if (_modoConsulta)
+                    {
+                        Close();   // vuelve a Estados Financieros, que sigue abierto
+                        return;
+                    }
                     CargarCatalogoMayor();
                     RestaurarFila(_filaCatalogoMayor);
                     break;
-
                 case NivelNavegacion.CatalogoMayor:
                     dgvPrincipal.Visible = false;
-                    break;
+                    break;                
             }
         }
 
@@ -411,9 +418,7 @@ namespace GaCostos
                 return;
 
             dgvPrincipal.ClearSelection();
-
             DataGridViewRow fila = dgvPrincipal.Rows[indice];
-
             fila.Selected = true;
 
             if (fila.Cells.Count > 0)
@@ -436,8 +441,7 @@ namespace GaCostos
 
             if (mostrarMensaje)
             {
-                MessageBox.Show(this, "Seleccione primero la carpeta que contiene los archivos de datos.", "Ruta no configurada", MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
+                MessageBox.Show(this, "Seleccione primero la carpeta que contiene los archivos de datos.", "Ruta no configurada", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
 
             return false;
@@ -630,7 +634,6 @@ namespace GaCostos
             if (incluirEncabezados)
             {
                 string encabezados = string.Join("\t", columnasVisibles.Select(columna => LimpiarTextoClipboard(columna.HeaderText)));
-
                 texto.AppendLine(encabezados);
             }
 
@@ -666,12 +669,7 @@ namespace GaCostos
         private string ObtenerTextoSeleccionado()
         {
             List<DataGridViewCell> celdasSeleccionadas = dgvPrincipal.SelectedCells.Cast<DataGridViewCell>()
-                .Where(celda =>
-                    celda.Visible &&
-                    celda.OwningRow.Visible &&
-                    celda.OwningColumn.Visible &&
-                    !celda.OwningRow.IsNewRow)
-                .ToList();
+                .Where(celda => celda.Visible && celda.OwningRow.Visible && celda.OwningColumn.Visible && !celda.OwningRow.IsNewRow).ToList();
 
             if (celdasSeleccionadas.Count == 0)
                 return string.Empty;
@@ -683,11 +681,7 @@ namespace GaCostos
             int displayIndexMax = celdasSeleccionadas.Max(celda => celda.OwningColumn.DisplayIndex);
 
             List<DataGridViewColumn> columnasEnRango = dgvPrincipal.Columns.Cast<DataGridViewColumn>()
-                .Where(columna =>
-                    columna.Visible &&
-                    columna.DisplayIndex >= displayIndexMin &&
-                    columna.DisplayIndex <= displayIndexMax)
-                .OrderBy(columna => columna.DisplayIndex).ToList();
+                .Where(columna => columna.Visible && columna.DisplayIndex >= displayIndexMin && columna.DisplayIndex <= displayIndexMax).OrderBy(columna => columna.DisplayIndex).ToList();
 
             HashSet<(int RowIndex, int ColumnIndex)> celdasMarcadas = celdasSeleccionadas.Select(celda => (celda.RowIndex, celda.ColumnIndex)).ToHashSet();
 
@@ -704,9 +698,8 @@ namespace GaCostos
 
                 foreach (DataGridViewColumn columna in columnasEnRango)
                 {
-                    bool celdaSeleccionada = celdasMarcadas.Contains(
-                        (rowIndex, columna.Index));
-
+                    bool celdaSeleccionada = celdasMarcadas.Contains((rowIndex, columna.Index));
+                    
                     if (!celdaSeleccionada)
                     {
                         valoresFila.Add(string.Empty);
@@ -714,9 +707,7 @@ namespace GaCostos
                     }
 
                     object? valor = fila.Cells[columna.Index].FormattedValue;
-
-                    valoresFila.Add(
-                        LimpiarTextoClipboard(valor?.ToString() ?? string.Empty));
+                    valoresFila.Add(LimpiarTextoClipboard(valor?.ToString() ?? string.Empty));
                 }
 
                 texto.AppendLine(string.Join("\t", valoresFila));
@@ -738,45 +729,7 @@ namespace GaCostos
         private void menuSeleccionFilaCompleta_Click(object sender, EventArgs e)
         {
             AplicarModoSeleccionGrid();
-        }
-
-        private void dgvPrincipal_KeyDown_1(object? sender, KeyEventArgs e)
-        {
-            if (e.Control && e.Shift && e.KeyCode == Keys.C)
-            {
-                e.Handled = true;
-                e.SuppressKeyPress = true;
-
-                CopiarTodoElGrid(incluirEncabezados: true);
-                return;
-            }
-
-            if (e.Control && e.Shift && e.KeyCode == Keys.X)
-            {
-                e.Handled = true;
-                e.SuppressKeyPress = true;
-
-                CopiarTodoElGrid(incluirEncabezados: false);
-                return;
-            }
-
-            if (e.Control && e.KeyCode == Keys.C)
-            {
-                e.Handled = true;
-                e.SuppressKeyPress = true;
-
-                CopiarSeleccion();
-                return;
-            }
-
-            if (e.KeyCode != Keys.Enter)
-                return;
-
-            e.Handled = true;
-            e.SuppressKeyPress = true;
-
-            EjecutarSeleccionActual();
-        }
+        }        
 
         private void AplicarEstilosVisualesGrid()
         {
@@ -832,6 +785,55 @@ namespace GaCostos
 
             // Mientras una fila está seleccionada, el color de selección puede ocultar el azul. Se deja blanco para que sea legible sobre selección azul.
             columna.DefaultCellStyle.SelectionForeColor = Color.White;
-        }        
+        }
+
+        private void IniciarModoConsulta()
+        {
+            Text = "Auxiliar - Consulta desde Estados Financieros";
+            label1.Text = "Consulta:";
+            btnVolverACaptura.Visible = false;   // no aplica en este modo
+
+            _rutaDatos = _configService.LeerRutaDatos();
+
+            if (!ValidarRutaDatos())
+            {
+                BeginInvoke(new Action(Close));
+                return;
+            }
+
+            CargarCatalogoAuxiliar(_rangoInferiorActual, _rangoSuperiorActual);
+            dgvPrincipal.Focus();
+        }
+
+        /// <summary>Mantiene visible qué cuenta / subcuenta se está auditando.</summary>
+        private void ActualizarContexto()
+        {
+            if (!_modoConsulta)
+                return;
+
+            lblRuta.Text = _nivelActual == NivelNavegacion.Auxiliar ? $"{_contextoConsulta}  ›  Subcuenta: {_contextoSubcuenta}" : _contextoConsulta;
+
+            RestaurarFila(0);   // al regresar de un nivel, Regresar() vuelve a posicionar la fila guardada
+        }
+
+        private string TextoFila(string columna)
+        {
+            return dgvPrincipal.CurrentRow?.Cells[columna].Value?.ToString()?.Trim() ?? "";
+        }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            if (keyData == Keys.Escape && dgvPrincipal.Focused)
+            {
+                // En modo normal, Esc solo sube de nivel (no oculta el catálogo mayor)
+                if (_modoConsulta || _nivelActual != NivelNavegacion.CatalogoMayor)
+                {
+                    Regresar();
+                    return true;
+                }
+            }
+
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
     }
 }

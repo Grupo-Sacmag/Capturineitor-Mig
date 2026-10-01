@@ -306,6 +306,8 @@ namespace CapturaDePolizas_2026_NET8.Repositories
             tabla.Columns.Add("Monto Activo", typeof(string));
             tabla.Columns.Add("Pasivo y Capital", typeof(string));
             tabla.Columns.Add("Monto Pasivo", typeof(string));
+            tabla.Columns.Add("CtaIzq", typeof(string));   // código de cuenta (lado Activo)
+            tabla.Columns.Add("CtaDer", typeof(string));   // código de cuenta (lado Pasivo/Capital)
 
             using var db = new EmpresaDbContext();
             var cuentas = db.Cuentas.AsNoTracking().ToList();
@@ -317,51 +319,51 @@ namespace CapturaDePolizas_2026_NET8.Repositories
 
             string[] clasificaciones = new[] { "CIRCULANTE", "FIJO", "DIFERIDO" };
 
-            var lineasActivo = new List<(string Concepto, string Monto)>();
-            lineasActivo.Add(("A C T I V O", ""));
+            var lineasActivo = new List<(string Concepto, string Monto, string Cuenta)>();
+            lineasActivo.Add(("A C T I V O", "", ""));
             lineasActivo.AddRange(GenerarLineasLado(activos, clasificaciones, out decimal totalActivo));
-            lineasActivo.Add(("Suma Activo", totalActivo.ToString("N2")));
+            lineasActivo.Add(("Suma Activo", totalActivo.ToString("N2"), ""));
 
-            var lineasPasivoCapital = new List<(string Concepto, string Monto)>();
-            lineasPasivoCapital.Add(("P A S I V O", ""));
+            var lineasPasivoCapital = new List<(string Concepto, string Monto, string Cuenta)>();
+            lineasPasivoCapital.Add(("P A S I V O", "", ""));
             lineasPasivoCapital.AddRange(GenerarLineasLado(pasivos, clasificaciones, out decimal totalPasivo));
-            lineasPasivoCapital.Add(("Suma Pasivo", totalPasivo.ToString("N2")));
-            lineasPasivoCapital.Add(("", ""));
-            lineasPasivoCapital.Add(("HABER", ""));
-            lineasPasivoCapital.Add(("SOCIAL", ""));
+            lineasPasivoCapital.Add(("Suma Pasivo", totalPasivo.ToString("N2"), ""));
+            lineasPasivoCapital.Add(("", "", ""));
+            lineasPasivoCapital.Add(("HABER", "", ""));
+            lineasPasivoCapital.Add(("SOCIAL", "", ""));
 
             decimal totalCapital = 0;
             foreach (var cap in capital)
             {
-                lineasPasivoCapital.Add((cap.Id + " " + cap.Nombre, cap.MontoBruto.ToString("N2")));
+                lineasPasivoCapital.Add((cap.Id + " " + cap.Nombre, cap.MontoBruto.ToString("N2"), $"{cap.Id}"));
                 totalCapital += cap.MontoBruto;
             }
-            lineasPasivoCapital.Add(("Suma Pasivo y Haber Soc", (totalPasivo + totalCapital).ToString("N2")));
+            lineasPasivoCapital.Add(("Suma Pasivo y Haber Soc", (totalPasivo + totalCapital).ToString("N2"), ""));
 
             int maxLines = Math.Max(lineasActivo.Count, lineasPasivoCapital.Count);
             for (int i = 0; i < maxLines; i++)
             {
-                var izq = i < lineasActivo.Count ? lineasActivo[i] : (Concepto: "", Monto: "");
-                var der = i < lineasPasivoCapital.Count ? lineasPasivoCapital[i] : (Concepto: "", Monto: "");
-                tabla.Rows.Add(izq.Concepto, izq.Monto, der.Concepto, der.Monto);
+                var izq = i < lineasActivo.Count ? lineasActivo[i] : (Concepto: "", Monto: "", Cuenta: "");
+                var der = i < lineasPasivoCapital.Count ? lineasPasivoCapital[i] : (Concepto: "", Monto: "", Cuenta: "");
+                tabla.Rows.Add(izq.Concepto, izq.Monto, der.Concepto, der.Monto, izq.Cuenta, der.Cuenta);
             }
 
             if (incluirCuentasOrden)
             {
-                tabla.Rows.Add("", "", "", "");
-                tabla.Rows.Add("CUENTAS DE ORDEN", "", "", "");
+                tabla.Rows.Add("", "", "", "", "", "");
+                tabla.Rows.Add("CUENTAS DE ORDEN", "", "", "", "", "");
                 foreach (var ord in orden)
                 {
-                    tabla.Rows.Add(ord.Id + " " + ord.Nombre, ord.MontoBruto.ToString("N2"), "", "");
+                    tabla.Rows.Add(ord.Id + " " + ord.Nombre, ord.MontoBruto.ToString("N2"), "", "", $"{ord.Id}", "");
                 }
             }
 
             return tabla;
         }
 
-        private List<(string Concepto, string Monto)> GenerarLineasLado(List<Cuenta> cuentas, string[] ordenClasificaciones, out decimal granTotal)
+        private List<(string Concepto, string Monto, string Cuenta)> GenerarLineasLado(List<Cuenta> cuentas, string[] ordenClasificaciones, out decimal granTotal)
         {
-            var lineas = new List<(string Concepto, string Monto)>();
+            var lineas = new List<(string Concepto, string Monto, string Cuenta)>();
             granTotal = 0;
 
             foreach (var clasif in ordenClasificaciones)
@@ -369,11 +371,13 @@ namespace CapturaDePolizas_2026_NET8.Repositories
                 var cuentasClasif = cuentas.Where(c => c.Clasificacion?.ToUpper() == clasif).ToList();
                 if (cuentasClasif.Any())
                 {
-                    lineas.Add((CultureInfo.CurrentCulture.TextInfo.ToTitleCase(clasif.ToLower()), ""));
+                    // Encabezado de clasificación (Circulante, Fijo, Diferido): sin cuenta
+                    lineas.Add((CultureInfo.CurrentCulture.TextInfo.ToTitleCase(clasif.ToLower()), "", ""));
+
                     decimal subtotal = 0;
                     foreach (var c in cuentasClasif)
                     {
-                        lineas.Add((c.Id + " " + c.Nombre, c.MontoBruto.ToString("N2")));
+                        lineas.Add((c.Id + " " + c.Nombre, c.MontoBruto.ToString("N2"), $"{c.Id}"));
                         subtotal += c.MontoBruto;
                     }
                     granTotal += subtotal;

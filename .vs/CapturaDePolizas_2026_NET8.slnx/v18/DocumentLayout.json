@@ -1,26 +1,42 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "D:\\Proyectos\\Captura\\",
+  "WorkspaceRootPath": "C:\\Users\\desarrollo.conta\\Desktop\\GITHUB\\SACMAG\\C#\\Cap \u002B Aux C# .NET8\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|d:\\proyectos\\captura\\formpolizadiario.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|solutionrelative:formpolizadiario.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|c:\\users\\desarrollo.conta\\desktop\\github\\sacmag\\c#\\cap \u002B aux c# .net8\\business\\catalogorepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|solutionrelative:business\\catalogorepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|d:\\proyectos\\captura\\formbuscarcatalogo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
-      "RelativeMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|solutionrelative:formbuscarcatalogo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+      "AbsoluteMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|c:\\users\\desarrollo.conta\\desktop\\github\\sacmag\\c#\\cap \u002B aux c# .net8\\business\\contabilidadservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|solutionrelative:business\\contabilidadservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|D:\\Proyectos\\Captura\\formpolizadiario.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
-      "RelativeMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|solutionrelative:formpolizadiario.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+      "AbsoluteMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|c:\\users\\desarrollo.conta\\desktop\\github\\sacmag\\c#\\cap \u002B aux c# .net8\\formreportebalance.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|solutionrelative:formreportebalance.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|d:\\proyectos\\captura\\formpolizadiario.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|solutionrelative:formpolizadiario.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|c:\\users\\desarrollo.conta\\desktop\\github\\sacmag\\c#\\cap \u002B aux c# .net8\\formreportebalance.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|solutionrelative:formreportebalance.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|d:\\proyectos\\captura\\formcaptura.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "AbsoluteMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|c:\\users\\desarrollo.conta\\desktop\\github\\sacmag\\c#\\cap \u002B aux c# .net8\\formvercuentas.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|solutionrelative:formvercuentas.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|c:\\users\\desarrollo.conta\\desktop\\github\\sacmag\\c#\\cap \u002B aux c# .net8\\formcaptura.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|solutionrelative:formcaptura.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|C:\\Users\\desarrollo.conta\\Desktop\\GITHUB\\SACMAG\\C#\\Cap \u002B Aux C# .NET8\\formcaptura.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
       "RelativeMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|solutionrelative:formcaptura.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|c:\\users\\desarrollo.conta\\desktop\\github\\sacmag\\c#\\cap \u002B aux c# .net8\\formauxiliar.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|solutionrelative:formauxiliar.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|c:\\users\\desarrollo.conta\\desktop\\github\\sacmag\\c#\\cap \u002B aux c# .net8\\formauxiliar.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{1B8E396D-FEC2-F8AC-B904-EAF343AEFFD7}|CapturaDePolizas_2026_NET8.csproj|solutionrelative:formauxiliar.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
     }
   ],
   "DocumentGroupContainers": [
@@ -30,48 +46,106 @@
       "DocumentGroups": [
         {
           "DockedWidth": 332,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "FormPolizaDiario.cs [Dise\u00F1o]",
-              "DocumentMoniker": "D:\\Proyectos\\Captura\\FormPolizaDiario.cs",
-              "RelativeDocumentMoniker": "FormPolizaDiario.cs",
-              "ToolTip": "D:\\Proyectos\\Captura\\FormPolizaDiario.cs [Dise\u00F1o]",
-              "RelativeToolTip": "FormPolizaDiario.cs [Dise\u00F1o]",
+              "DocumentIndex": 6,
+              "Title": "FormCaptura.cs [Dise\u00F1o]",
+              "DocumentMoniker": "C:\\Users\\desarrollo.conta\\Desktop\\GITHUB\\SACMAG\\C#\\Cap \u002B Aux C# .NET8\\FormCaptura.cs",
+              "RelativeDocumentMoniker": "FormCaptura.cs",
+              "ToolTip": "C:\\Users\\desarrollo.conta\\Desktop\\GITHUB\\SACMAG\\C#\\Cap \u002B Aux C# .NET8\\FormCaptura.cs [Dise\u00F1o]",
+              "RelativeToolTip": "FormCaptura.cs [Dise\u00F1o]",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-14T00:49:54.195Z",
+              "WhenOpened": "2026-09-29T20:19:48.675Z",
               "IsPinned": true,
               "EditorCaption": " [Dise\u00F1o]"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "FormPolizaDiario.cs",
-              "DocumentMoniker": "D:\\Proyectos\\Captura\\FormPolizaDiario.cs",
-              "RelativeDocumentMoniker": "FormPolizaDiario.cs",
-              "ToolTip": "D:\\Proyectos\\Captura\\FormPolizaDiario.cs",
-              "RelativeToolTip": "FormPolizaDiario.cs",
-              "ViewState": "AgIAABQAAAAAAAAAAAAAACIAAAANAAAAAAAAAA==",
+              "DocumentIndex": 5,
+              "Title": "FormCaptura.cs",
+              "DocumentMoniker": "C:\\Users\\desarrollo.conta\\Desktop\\GITHUB\\SACMAG\\C#\\Cap \u002B Aux C# .NET8\\FormCaptura.cs",
+              "RelativeDocumentMoniker": "FormCaptura.cs",
+              "ToolTip": "C:\\Users\\desarrollo.conta\\Desktop\\GITHUB\\SACMAG\\C#\\Cap \u002B Aux C# .NET8\\FormCaptura.cs",
+              "RelativeToolTip": "FormCaptura.cs",
+              "ViewState": "AgIAAH8AAAAAAAAAAAAvwHQBAAAaAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-13T23:37:31.779Z",
+              "WhenOpened": "2026-10-01T16:53:13.834Z",
+              "IsPinned": true,
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "FormAuxiliar.cs [Dise\u00F1o]",
+              "DocumentMoniker": "C:\\Users\\desarrollo.conta\\Desktop\\GITHUB\\SACMAG\\C#\\Cap \u002B Aux C# .NET8\\FormAuxiliar.cs",
+              "RelativeDocumentMoniker": "FormAuxiliar.cs",
+              "ToolTip": "C:\\Users\\desarrollo.conta\\Desktop\\GITHUB\\SACMAG\\C#\\Cap \u002B Aux C# .NET8\\FormAuxiliar.cs [Dise\u00F1o]",
+              "RelativeToolTip": "FormAuxiliar.cs [Dise\u00F1o]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-10-01T21:58:50.138Z",
+              "IsPinned": true,
+              "EditorCaption": " [Dise\u00F1o]"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "FormAuxiliar.cs",
+              "DocumentMoniker": "C:\\Users\\desarrollo.conta\\Desktop\\GITHUB\\SACMAG\\C#\\Cap \u002B Aux C# .NET8\\FormAuxiliar.cs",
+              "RelativeDocumentMoniker": "FormAuxiliar.cs",
+              "ToolTip": "C:\\Users\\desarrollo.conta\\Desktop\\GITHUB\\SACMAG\\C#\\Cap \u002B Aux C# .NET8\\FormAuxiliar.cs",
+              "RelativeToolTip": "FormAuxiliar.cs",
+              "ViewState": "AgIAAAcDAAAAAAAAAAAEwBsDAAAnAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-10-01T22:00:11.797Z",
+              "IsPinned": true,
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "CatalogoRepository.cs",
+              "DocumentMoniker": "C:\\Users\\desarrollo.conta\\Desktop\\GITHUB\\SACMAG\\C#\\Cap \u002B Aux C# .NET8\\Business\\CatalogoRepository.cs",
+              "RelativeDocumentMoniker": "Business\\CatalogoRepository.cs",
+              "ToolTip": "C:\\Users\\desarrollo.conta\\Desktop\\GITHUB\\SACMAG\\C#\\Cap \u002B Aux C# .NET8\\Business\\CatalogoRepository.cs",
+              "RelativeToolTip": "Business\\CatalogoRepository.cs",
+              "ViewState": "AgIAAI4AAAAAAAAAAAAEwKIAAAAvAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-10-01T22:04:02.867Z",
               "IsPinned": true,
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 3,
-              "Title": "FormPolizaDiario.Designer.cs",
-              "DocumentMoniker": "D:\\Proyectos\\Captura\\FormPolizaDiario.Designer.cs",
-              "RelativeDocumentMoniker": "FormPolizaDiario.Designer.cs",
-              "ToolTip": "D:\\Proyectos\\Captura\\FormPolizaDiario.Designer.cs",
-              "RelativeToolTip": "FormPolizaDiario.Designer.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAxwCIAAAAIAAAAAAAAAA==",
+              "Title": "FormReporteBalance.cs [Dise\u00F1o]",
+              "DocumentMoniker": "C:\\Users\\desarrollo.conta\\Desktop\\GITHUB\\SACMAG\\C#\\Cap \u002B Aux C# .NET8\\FormReporteBalance.cs",
+              "RelativeDocumentMoniker": "FormReporteBalance.cs",
+              "ToolTip": "C:\\Users\\desarrollo.conta\\Desktop\\GITHUB\\SACMAG\\C#\\Cap \u002B Aux C# .NET8\\FormReporteBalance.cs [Dise\u00F1o]",
+              "RelativeToolTip": "FormReporteBalance.cs [Dise\u00F1o]",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-07-14T00:43:15.299Z",
+              "WhenOpened": "2026-10-01T22:05:05.752Z",
+              "IsPinned": true,
+              "EditorCaption": " [Dise\u00F1o]"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "FormReporteBalance.cs",
+              "DocumentMoniker": "C:\\Users\\desarrollo.conta\\Desktop\\GITHUB\\SACMAG\\C#\\Cap \u002B Aux C# .NET8\\FormReporteBalance.cs",
+              "RelativeDocumentMoniker": "FormReporteBalance.cs",
+              "ToolTip": "C:\\Users\\desarrollo.conta\\Desktop\\GITHUB\\SACMAG\\C#\\Cap \u002B Aux C# .NET8\\FormReporteBalance.cs",
+              "RelativeToolTip": "FormReporteBalance.cs",
+              "ViewState": "AgIAAGQBAAAAAAAAAAAUwHQBAABYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-10-01T22:05:08.377Z",
               "IsPinned": true,
               "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
             },
             {
               "$type": "Bookmark",
@@ -83,35 +157,33 @@
             },
             {
               "$type": "Bookmark",
-              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
-            },
-            {
-              "$type": "Bookmark",
               "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
             },
             {
               "$type": "Document",
               "DocumentIndex": 1,
-              "Title": "FormBuscarCatalogo.cs [Dise\u00F1o]",
-              "DocumentMoniker": "D:\\Proyectos\\Captura\\FormBuscarCatalogo.cs",
-              "RelativeDocumentMoniker": "FormBuscarCatalogo.cs",
-              "ToolTip": "D:\\Proyectos\\Captura\\FormBuscarCatalogo.cs [Dise\u00F1o]",
-              "RelativeToolTip": "FormBuscarCatalogo.cs [Dise\u00F1o]",
+              "Title": "ContabilidadService.cs",
+              "DocumentMoniker": "C:\\Users\\desarrollo.conta\\Desktop\\GITHUB\\SACMAG\\C#\\Cap \u002B Aux C# .NET8\\Business\\ContabilidadService.cs",
+              "RelativeDocumentMoniker": "Business\\ContabilidadService.cs",
+              "ToolTip": "C:\\Users\\desarrollo.conta\\Desktop\\GITHUB\\SACMAG\\C#\\Cap \u002B Aux C# .NET8\\Business\\ContabilidadService.cs",
+              "RelativeToolTip": "Business\\ContabilidadService.cs",
+              "ViewState": "AgIAAAgAAAAAAAAAAAAiwBAAAAAzAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-31T19:13:34.647Z",
-              "EditorCaption": " [Dise\u00F1o]"
+              "WhenOpened": "2026-10-01T23:22:34.269Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 4,
-              "Title": "FormCaptura.cs [Dise\u00F1o]",
-              "DocumentMoniker": "D:\\Proyectos\\Captura\\FormCaptura.cs",
-              "RelativeDocumentMoniker": "FormCaptura.cs",
-              "ToolTip": "D:\\Proyectos\\Captura\\FormCaptura.cs [Dise\u00F1o]",
-              "RelativeToolTip": "FormCaptura.cs [Dise\u00F1o]",
+              "Title": "FormVerCuentas.cs",
+              "DocumentMoniker": "C:\\Users\\desarrollo.conta\\Desktop\\GITHUB\\SACMAG\\C#\\Cap \u002B Aux C# .NET8\\FormVerCuentas.cs",
+              "RelativeDocumentMoniker": "FormVerCuentas.cs",
+              "ToolTip": "C:\\Users\\desarrollo.conta\\Desktop\\GITHUB\\SACMAG\\C#\\Cap \u002B Aux C# .NET8\\FormVerCuentas.cs",
+              "RelativeToolTip": "FormVerCuentas.cs",
+              "ViewState": "AgIAAFAAAAAAAAAAAAAAwAYAAAASAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-08-31T19:13:35.844Z",
-              "EditorCaption": " [Dise\u00F1o]"
+              "WhenOpened": "2026-10-01T22:19:33.181Z",
+              "EditorCaption": ""
             }
           ]
         },
