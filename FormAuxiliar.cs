@@ -1,8 +1,5 @@
 using CapturaDePolizas_2026_NET8;
 using CapturaDePolizas_2026_NET8.Business;
-using CapturaDePolizas_2026_NET8.Entities;
-using CapturaDePolizas_2026_NET8.Models;
-using CapturaDePolizas_2026_NET8.Repositories;
 using GaCostos.Models;
 using GaCostos.Services;
 using System.ComponentModel;
@@ -12,48 +9,44 @@ namespace GaCostos
 {
     public partial class FormAuxiliar : Form
     {
+        private readonly bool _modoConsulta;        // abierto desde Estados Financieros
+        private string _contextoConsulta = "";      // "Cuenta: 1100 Activo circulante"
+        private string _contextoSubcuenta = "";
         private readonly ConfigService _configService;
         private readonly ContabilidadService _contabilidadService;
         private readonly BindingSource _bindingSource = new();
-
         private string? _rutaDatos;
-
         private NivelNavegacion _nivelActual = NivelNavegacion.CatalogoMayor;
-        private OrigenDatosAuxiliar _origenDatosActual = OrigenDatosAuxiliar.Viejos;
-
-        private readonly ICatalogoRepository _catalogoRepository;
-
-        private int? _cuentaNuevaActual;
-        private int? _subcuentaNuevaActual;
-
-        private bool _auxiliarNuevoEsCuentaDirecta;
-        private int _guiaAuxiliarActual;
-
-        private bool _inicializandoSelectorOrigen;
-
         private int _filaCatalogoMayor;
         private int _filaCatalogoAuxiliar;
-
         private int _rangoInferiorActual;
         private int _rangoSuperiorActual;
-
         private bool _cierreConfirmado;
 
-        private enum OrigenDatosAuxiliar
+        public FormAuxiliar() : this(modoConsulta : false)
         {
-            Viejos = 0,
-            Nuevos = 1
-        }
 
-        public FormAuxiliar()
+        }
+        
+        public FormAuxiliar(int rangoInferior, int rangoSuperior, string contexto) : this(modoConsulta: true)
         {
+            _rangoInferiorActual = rangoInferior;
+            _rangoSuperiorActual = rangoSuperior;
+            _contextoConsulta = contexto;
+
+            Load += (_, _) => IniciarModoConsulta();
+        }
+        private FormAuxiliar(bool modoConsulta)
+        {
+            _modoConsulta = modoConsulta;
             _configService = new ConfigService();
             _contabilidadService = new ContabilidadService();
-            _catalogoRepository = new CatalogoRepository();
 
             InitializeComponent();
             InicializarFormulario();
-            CargarRutaInicial();
+
+            if (!modoConsulta)
+                CargarRutaInicial();
         }
 
         private void InicializarFormulario()
@@ -61,28 +54,35 @@ namespace GaCostos
             dgvPrincipal.AutoGenerateColumns = false;
             dgvPrincipal.DataSource = _bindingSource;
             dgvPrincipal.EnableHeadersVisualStyles = false;
-            dgvPrincipal.MultiSelect = true;
 
+            dgvPrincipal.MultiSelect = true;
             dgvPrincipal.ClipboardCopyMode = DataGridViewClipboardCopyMode.Disable;
+
             dgvPrincipal.ColumnHeadersDefaultCellStyle.BackColor = Color.Gainsboro;
             dgvPrincipal.ColumnHeadersDefaultCellStyle.Font = new Font(dgvPrincipal.Font, FontStyle.Bold);
 
-            dgvPrincipal.CellDoubleClick += DgvPrincipal_CellDoubleClick;
+            dgvPrincipal.CellDoubleClick += DgvPrincipal_CellDoubleClick;            
+
             btnRegresar.Click += BtnRegresar_Click;
 
             menuActualizar.Click += MenuActualizar_Click;
             menuCambiarSubdirectorio.Click += MenuCambiarSubdirectorio_Click;
             menuVerificarArchivos.Click += MenuVerificarArchivos_Click;
 
+            menuVersion.Click += MenuVersion_Click;
+
+            menuSeleccionFilaCompleta.CheckOnClick = true;
+            menuSeleccionFilaCompleta.Checked = true;
+
             dgvPrincipal.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None;
             dgvPrincipal.BackgroundColor = Color.White;
 
-            InicializarSelectorOrigenDatos(); ;
+            AplicarModoSeleccionGrid();
         }
 
         private void FormPrincipal_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if (_cierreConfirmado)
+            if (_cierreConfirmado || _modoConsulta)
                 return;
 
             // No preguntar cuando Windows o la aplicación completa
@@ -143,30 +143,13 @@ namespace GaCostos
 
         private void CargarRutaInicial()
         {
-            // La ruta de archivos se sigue leyendo porque será utilizada
-            // como respaldo si la base de datos no está disponible.
             _rutaDatos = _configService.LeerRutaDatos();
 
-            if (_origenDatosActual == OrigenDatosAuxiliar.Nuevos)
-            {
-                // La BD es la fuente principal.
-                // No necesitamos una ruta de archivos válida para continuar.
-                dgvPrincipal.Visible = true;
-
-                ActualizarInterfazSegunOrigen();
-                CargarCatalogoMayor();
-
-                return;
-            }
-
-            // Si estamos trabajando con archivos se conserva
-            // exactamente la validación anterior.
             if (string.IsNullOrWhiteSpace(_rutaDatos) || !Directory.Exists(_rutaDatos))
             {
                 lblRuta.Text = "Ruta de datos no configurada.";
                 _bindingSource.DataSource = null;
                 dgvPrincipal.Visible = false;
-
                 return;
             }
 
@@ -178,21 +161,17 @@ namespace GaCostos
 
         private void CargarCatalogoMayor()
         {
-            if (!ValidarOrigenActual(mostrarMensaje: false))
+            if (!ValidarRutaDatos(mostrarMensaje: false))
                 return;
 
             try
             {
-                IReadOnlyList<CuentaMayor> cuentas = ObtenerCatalogoMayorSegunOrigen();
-
+                IReadOnlyList<CuentaMayor> cuentas = _contabilidadService.ObtenerCatalogoMayor(_rutaDatos!);
                 _nivelActual = NivelNavegacion.CatalogoMayor;
-
                 ConfigurarColumnasCatalogoMayor();
-
                 _bindingSource.DataSource = new BindingList<CuentaMayor>(cuentas.ToList());
-
                 dgvPrincipal.Visible = true;
-                ActualizarInterfazSegunOrigen();
+                lblRuta.Text = _rutaDatos!;
             }
             catch (Exception ex)
             {
@@ -202,32 +181,19 @@ namespace GaCostos
 
         private void CargarCatalogoAuxiliar(int rangoInferior, int rangoSuperior)
         {
-            if (!ValidarOrigenActual())
+            if (!ValidarRutaDatos())
                 return;
 
             try
             {
-                IReadOnlyList<CuentaAuxiliar> cuentas = ObtenerCatalogoAuxiliarSegunOrigen(rangoInferior, rangoSuperior);
-
-                if (_origenDatosActual == OrigenDatosAuxiliar.Nuevos &&
-                    cuentas.Count == 0)
-                {
-                    _subcuentaNuevaActual = null;
-                    _auxiliarNuevoEsCuentaDirecta = true;
-
-                    CargarMovimientosAuxiliar(0);
-                    return;
-                }
-
-                _auxiliarNuevoEsCuentaDirecta = false;
+                IReadOnlyList<CuentaAuxiliar> cuentas = _contabilidadService.ObtenerCatalogoAuxiliar(_rutaDatos!, rangoInferior, rangoSuperior);
                 _nivelActual = NivelNavegacion.CatalogoAuxiliar;
                 _rangoInferiorActual = rangoInferior;
                 _rangoSuperiorActual = rangoSuperior;
-
                 ConfigurarColumnasCatalogoAuxiliar();
-
                 _bindingSource.DataSource = new BindingList<CuentaAuxiliar>(cuentas.ToList());
                 dgvPrincipal.Visible = true;
+                ActualizarContexto();
             }
             catch (Exception ex)
             {
@@ -237,22 +203,18 @@ namespace GaCostos
 
         private void CargarMovimientosAuxiliar(int guia)
         {
-            if (!ValidarOrigenActual())
+            if (!ValidarRutaDatos())
                 return;
 
             try
             {
-                _guiaAuxiliarActual = guia;
-
-                AuxiliarResultado resultado = ObtenerMovimientosAuxiliarSegunOrigen(guia, mesProceso: 0);
+                AuxiliarResultado resultado = _contabilidadService.ObtenerMovimientosAuxiliar(_rutaDatos!, guia, mesProceso: 0);
                 List<MovimientoAuxiliarGridRow> movimientos = resultado.Movimientos.Select(MovimientoAuxiliarGridRow.FromMovimiento).ToList();
-
                 _nivelActual = NivelNavegacion.Auxiliar;
-
                 ConfigurarColumnasMovimientosAuxiliar();
-
                 _bindingSource.DataSource = new BindingList<MovimientoAuxiliarGridRow>(movimientos);
                 dgvPrincipal.Visible = true;
+                ActualizarContexto();
             }
             catch (Exception ex)
             {
@@ -283,33 +245,13 @@ namespace GaCostos
 
         private void EntrarACatalogoAuxiliar()
         {
-            if (dgvPrincipal.CurrentRow?.DataBoundItem
-                is not CuentaMayor cuenta)
-            {
+            if (dgvPrincipal.CurrentRow?.DataBoundItem is not CuentaMayor cuenta)
                 return;
-            }
-
-            _filaCatalogoMayor = dgvPrincipal.CurrentRow.Index;
-
-            if (_origenDatosActual == OrigenDatosAuxiliar.Nuevos)
-            {
-                if (!int.TryParse(cuenta.Cuenta, out int cuentaId))
-                {
-                    return;
-                }
-
-                _cuentaNuevaActual = cuentaId;
-                _subcuentaNuevaActual = null;
-
-                CargarCatalogoAuxiliar(rangoInferior: cuentaId, rangoSuperior: cuenta.RangoSuperior);
-
-                return;
-            }
 
             if (cuenta.RangoInferior <= 0 || cuenta.RangoSuperior <= 0)
-            {
                 return;
-            }
+
+            _filaCatalogoMayor = dgvPrincipal.CurrentRow.Index;
 
             CargarCatalogoAuxiliar(cuenta.RangoInferior, cuenta.RangoSuperior);
         }
@@ -317,110 +259,60 @@ namespace GaCostos
         private void EntrarAAuxiliar()
         {
             if (dgvPrincipal.CurrentRow?.DataBoundItem is not CuentaAuxiliar cuenta)
-            {
                 return;
-            }
 
             if (cuenta.Guia <= 0)
                 return;
 
             _filaCatalogoAuxiliar = dgvPrincipal.CurrentRow.Index;
 
-            if (_origenDatosActual == OrigenDatosAuxiliar.Nuevos)
-            {
-                _cuentaNuevaActual = cuenta.RangoInferior;
-                _subcuentaNuevaActual = cuenta.Guia;
-                _auxiliarNuevoEsCuentaDirecta = false;
-            }
+            _contextoSubcuenta = $"{TextoFila("colCuenta")} {TextoFila("colNombre")}".Trim();
 
             CargarMovimientosAuxiliar(cuenta.Guia);
         }
 
         private void AbrirPolizaDiario()
         {
-            if (dgvPrincipal.CurrentRow?.DataBoundItem
-                is not MovimientoAuxiliarGridRow movimiento)
-            {
+            if (dgvPrincipal.CurrentRow?.DataBoundItem is not MovimientoAuxiliarGridRow movimiento)
                 return;
-            }
 
             if (movimiento.Poliza <= 0)
                 return;
 
-            try
-            {
-                using FormPolizaDiario form = new(_contabilidadService);
-                bool cargada;
+            if (!ValidarRutaDatos())
+                return;
 
-                if (_origenDatosActual == OrigenDatosAuxiliar.Nuevos)
-                {
-                    if (!movimiento.PolizaId.HasValue)
-                    {
-                        MessageBox.Show(this, "El movimiento no contiene el identificador interno de la póliza.", "Póliza no disponible", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        return;
-                    }
+            using FormPolizaDiario form = new(_contabilidadService);
 
-                    PolizaAuxiliarDbDto? poliza = _catalogoRepository.ObtenerPolizaParaAuxiliar(movimiento.PolizaId.Value);
+            bool cargada = form.CargarPoliza(rutaDatos: _rutaDatos!, fechaMovimiento: movimiento.Fecha, numeroPoliza: movimiento.Poliza);
 
-                    if (poliza is null)
-                    {
-                        MessageBox.Show(this, "No se encontró la póliza en la base de datos.", "Sin resultado", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        return;
-                    }
+            if (!cargada)
+                return;
 
-                    cargada = form.CargarPolizaNueva(poliza);
-                }
-                
-                else
-                {
-                    if (!ValidarRutaDatos())
-                        return;
-
-                    cargada = form.CargarPoliza(
-                        rutaDatos: _rutaDatos!,
-                        fechaMovimiento: movimiento.Fecha,
-                        numeroPoliza: movimiento.Poliza);
-                }
-
-                if (!cargada)
-                    return;
-
-                form.ShowDialog(this);
-            }
-            
-            catch (Exception ex)
-            {
-                MostrarError("No fue posible abrir la póliza.", ex);
-            }
+            form.ShowDialog(this);
         }
-
-        //Se podrá sustituir por AbrirPolizaSegunOrigen(movimiento);
 
         private void Regresar()
         {
             switch (_nivelActual)
             {
                 case NivelNavegacion.Auxiliar:
-
-                    if (_origenDatosActual == OrigenDatosAuxiliar.Nuevos && _auxiliarNuevoEsCuentaDirecta)
-                    {
-                        CargarCatalogoMayor();
-                        RestaurarFila(_filaCatalogoMayor);
-                        return;
-                    }
-
                     CargarCatalogoAuxiliar(_rangoInferiorActual, _rangoSuperiorActual);
                     RestaurarFila(_filaCatalogoAuxiliar);
                     break;
 
                 case NivelNavegacion.CatalogoAuxiliar:
+                    if (_modoConsulta)
+                    {
+                        Close();   // vuelve a Estados Financieros, que sigue abierto
+                        return;
+                    }
                     CargarCatalogoMayor();
                     RestaurarFila(_filaCatalogoMayor);
                     break;
-
                 case NivelNavegacion.CatalogoMayor:
                     dgvPrincipal.Visible = false;
-                    break;
+                    break;                
             }
         }
 
@@ -437,18 +329,13 @@ namespace GaCostos
                     break;
 
                 case NivelNavegacion.Auxiliar:
-                    CargarMovimientosAuxiliar(_guiaAuxiliarActual);
+                    CargarCatalogoMayor();
                     break;
             }
         }
 
         private void CambiarSubdirectorio()
         {
-            if (_origenDatosActual != OrigenDatosAuxiliar.Viejos)
-            {
-                return;
-            }
-
             using FolderBrowserDialog dialog = new()
             {
                 Description = "Seleccione la carpeta que contiene catmay, cataux, DATOS y AUXILIAR.",
@@ -482,11 +369,6 @@ namespace GaCostos
 
         private void VerificarArchivos()
         {
-            if (_origenDatosActual != OrigenDatosAuxiliar.Viejos)
-            {
-                return;
-            }
-
             if (!ValidarRutaDatos())
                 return;
 
@@ -536,9 +418,7 @@ namespace GaCostos
                 return;
 
             dgvPrincipal.ClearSelection();
-
             DataGridViewRow fila = dgvPrincipal.Rows[indice];
-
             fila.Selected = true;
 
             if (fila.Cells.Count > 0)
@@ -561,8 +441,7 @@ namespace GaCostos
 
             if (mostrarMensaje)
             {
-                MessageBox.Show(this, "Seleccione primero la carpeta que contiene los archivos de datos.", "Ruta no configurada", MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
+                MessageBox.Show(this, "Seleccione primero la carpeta que contiene los archivos de datos.", "Ruta no configurada", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
 
             return false;
@@ -629,6 +508,17 @@ namespace GaCostos
                 EjecutarSeleccionActual();
         }
 
+        private void DgvPrincipal_KeyDown(object? sender, KeyEventArgs e)
+        {
+            if (e.KeyCode != Keys.Enter)
+                return;
+
+            e.Handled = true;
+            e.SuppressKeyPress = true;
+
+            EjecutarSeleccionActual();
+        }
+
         private void BtnRegresar_Click(object? sender, EventArgs e)
         {
             Regresar();
@@ -669,8 +559,7 @@ namespace GaCostos
         private sealed class MovimientoAuxiliarGridRow
         {
             public string Fecha { get; init; } = string.Empty;
-            public int Poliza { get; init; }
-            public int? PolizaId { get; init; }
+            public short Poliza { get; init; }
             public string Concepto { get; init; } = string.Empty;
             public string Debe { get; init; } = string.Empty;
             public string Haber { get; init; } = string.Empty;
@@ -682,9 +571,7 @@ namespace GaCostos
                 {
                     Fecha = movimiento.Fecha,
                     Poliza = movimiento.Poliza,
-                    PolizaId = movimiento.PolizaId,
                     Concepto = movimiento.Concepto,
-
                     Debe = movimiento.Importe > 0 ? FormatHelper.FormatearImporte(movimiento.Importe) : string.Empty,
                     Haber = movimiento.Importe < 0 ? FormatHelper.FormatearImporte(Math.Abs(movimiento.Importe)) : string.Empty,
                     Saldo = FormatHelper.FormatearImporte(movimiento.SaldoAcumulado)
@@ -747,7 +634,6 @@ namespace GaCostos
             if (incluirEncabezados)
             {
                 string encabezados = string.Join("\t", columnasVisibles.Select(columna => LimpiarTextoClipboard(columna.HeaderText)));
-
                 texto.AppendLine(encabezados);
             }
 
@@ -783,12 +669,7 @@ namespace GaCostos
         private string ObtenerTextoSeleccionado()
         {
             List<DataGridViewCell> celdasSeleccionadas = dgvPrincipal.SelectedCells.Cast<DataGridViewCell>()
-                .Where(celda =>
-                    celda.Visible &&
-                    celda.OwningRow.Visible &&
-                    celda.OwningColumn.Visible &&
-                    !celda.OwningRow.IsNewRow)
-                .ToList();
+                .Where(celda => celda.Visible && celda.OwningRow.Visible && celda.OwningColumn.Visible && !celda.OwningRow.IsNewRow).ToList();
 
             if (celdasSeleccionadas.Count == 0)
                 return string.Empty;
@@ -800,11 +681,7 @@ namespace GaCostos
             int displayIndexMax = celdasSeleccionadas.Max(celda => celda.OwningColumn.DisplayIndex);
 
             List<DataGridViewColumn> columnasEnRango = dgvPrincipal.Columns.Cast<DataGridViewColumn>()
-                .Where(columna =>
-                    columna.Visible &&
-                    columna.DisplayIndex >= displayIndexMin &&
-                    columna.DisplayIndex <= displayIndexMax)
-                .OrderBy(columna => columna.DisplayIndex).ToList();
+                .Where(columna => columna.Visible && columna.DisplayIndex >= displayIndexMin && columna.DisplayIndex <= displayIndexMax).OrderBy(columna => columna.DisplayIndex).ToList();
 
             HashSet<(int RowIndex, int ColumnIndex)> celdasMarcadas = celdasSeleccionadas.Select(celda => (celda.RowIndex, celda.ColumnIndex)).ToHashSet();
 
@@ -821,9 +698,8 @@ namespace GaCostos
 
                 foreach (DataGridViewColumn columna in columnasEnRango)
                 {
-                    bool celdaSeleccionada = celdasMarcadas.Contains(
-                        (rowIndex, columna.Index));
-
+                    bool celdaSeleccionada = celdasMarcadas.Contains((rowIndex, columna.Index));
+                    
                     if (!celdaSeleccionada)
                     {
                         valoresFila.Add(string.Empty);
@@ -831,9 +707,7 @@ namespace GaCostos
                     }
 
                     object? valor = fila.Cells[columna.Index].FormattedValue;
-
-                    valoresFila.Add(
-                        LimpiarTextoClipboard(valor?.ToString() ?? string.Empty));
+                    valoresFila.Add(LimpiarTextoClipboard(valor?.ToString() ?? string.Empty));
                 }
 
                 texto.AppendLine(string.Join("\t", valoresFila));
@@ -855,45 +729,7 @@ namespace GaCostos
         private void menuSeleccionFilaCompleta_Click(object sender, EventArgs e)
         {
             AplicarModoSeleccionGrid();
-        }
-
-        private void dgvPrincipal_KeyDown_1(object? sender, KeyEventArgs e)
-        {
-            if (e.Control && e.Shift && e.KeyCode == Keys.C)
-            {
-                e.Handled = true;
-                e.SuppressKeyPress = true;
-
-                CopiarTodoElGrid(incluirEncabezados: true);
-                return;
-            }
-
-            if (e.Control && e.Shift && e.KeyCode == Keys.X)
-            {
-                e.Handled = true;
-                e.SuppressKeyPress = true;
-
-                CopiarTodoElGrid(incluirEncabezados: false);
-                return;
-            }
-
-            if (e.Control && e.KeyCode == Keys.C)
-            {
-                e.Handled = true;
-                e.SuppressKeyPress = true;
-
-                CopiarSeleccion();
-                return;
-            }
-
-            if (e.KeyCode != Keys.Enter)
-                return;
-
-            e.Handled = true;
-            e.SuppressKeyPress = true;
-
-            EjecutarSeleccionActual();
-        }
+        }        
 
         private void AplicarEstilosVisualesGrid()
         {
@@ -951,206 +787,53 @@ namespace GaCostos
             columna.DefaultCellStyle.SelectionForeColor = Color.White;
         }
 
-        private sealed record OpcionOrigenDatos(OrigenDatosAuxiliar Valor, string Texto)
+        private void IniciarModoConsulta()
         {
-            public override string ToString()
+            Text = "Auxiliar - Consulta desde Estados Financieros";
+            label1.Text = "Consulta:";
+            btnVolverACaptura.Visible = false;   // no aplica en este modo
+
+            _rutaDatos = _configService.LeerRutaDatos();
+
+            if (!ValidarRutaDatos())
             {
-                return Texto;
+                BeginInvoke(new Action(Close));
+                return;
             }
+
+            CargarCatalogoAuxiliar(_rangoInferiorActual, _rangoSuperiorActual);
+            dgvPrincipal.Focus();
         }
 
-        private void InicializarSelectorOrigenDatos()
+        /// <summary>Mantiene visible qué cuenta / subcuenta se está auditando.</summary>
+        private void ActualizarContexto()
         {
-            _inicializandoSelectorOrigen = true;
+            if (!_modoConsulta)
+                return;
 
-            try
+            lblRuta.Text = _nivelActual == NivelNavegacion.Auxiliar ? $"{_contextoConsulta}  ›  Subcuenta: {_contextoSubcuenta}" : _contextoConsulta;
+
+            RestaurarFila(0);   // al regresar de un nivel, Regresar() vuelve a posicionar la fila guardada
+        }
+
+        private string TextoFila(string columna)
+        {
+            return dgvPrincipal.CurrentRow?.Cells[columna].Value?.ToString()?.Trim() ?? "";
+        }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            if (keyData == Keys.Escape && dgvPrincipal.Focused)
             {
-                cmbOrigenDatos.Items.Clear();
-
-                cmbOrigenDatos.Items.Add(new OpcionOrigenDatos(OrigenDatosAuxiliar.Nuevos,"Base de datos"));
-                cmbOrigenDatos.Items.Add(new OpcionOrigenDatos(OrigenDatosAuxiliar.Viejos, "Archivos"));
-
-                bool baseDatosDisponible = _catalogoRepository.PuedeConectarBaseDatos();
-
-                if (baseDatosDisponible)
+                // En modo normal, Esc solo sube de nivel (no oculta el catálogo mayor)
+                if (_modoConsulta || _nivelActual != NivelNavegacion.CatalogoMayor)
                 {
-                    _origenDatosActual = OrigenDatosAuxiliar.Nuevos;
-                    cmbOrigenDatos.SelectedIndex = 0;
-                }
-                else
-                {
-                    _origenDatosActual = OrigenDatosAuxiliar.Viejos;
-                    cmbOrigenDatos.SelectedIndex = 1;
+                    Regresar();
+                    return true;
                 }
             }
-            finally
-            {
-                _inicializandoSelectorOrigen = false;
-            }
 
-            ActualizarInterfazSegunOrigen();
+            return base.ProcessCmdKey(ref msg, keyData);
         }
-
-        private void cmbOrigenDatos_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (_inicializandoSelectorOrigen)
-                return;
-
-            if (cmbOrigenDatos.SelectedItem
-                is not OpcionOrigenDatos opcion)
-            {
-                return;
-            }
-
-            if (_origenDatosActual == opcion.Valor)
-                return;
-
-            _origenDatosActual = opcion.Valor;
-
-            ReiniciarNavegacionPorCambioDeOrigen();
-            ActualizarInterfazSegunOrigen();
-
-            dgvPrincipal.Visible = false;
-
-            CargarCatalogoMayor();
-        }
-
-        private void ReiniciarNavegacionPorCambioDeOrigen()
-        {
-            _nivelActual = NivelNavegacion.CatalogoMayor;
-
-            _filaCatalogoMayor = 0;
-            _filaCatalogoAuxiliar = 0;
-            _rangoInferiorActual = 0;
-            _rangoSuperiorActual = 0;
-            _bindingSource.DataSource = null;
-
-            dgvPrincipal.ClearSelection();
-        }
-
-        private void ActualizarInterfazSegunOrigen()
-        {
-            bool usaArchivosViejos = _origenDatosActual == OrigenDatosAuxiliar.Viejos;
-
-            menuCambiarSubdirectorio.Enabled = usaArchivosViejos;
-            menuVerificarArchivos.Enabled = usaArchivosViejos;
-
-            if (usaArchivosViejos)
-            {
-                label1.Text = "Directorio:";
-                lblRuta.Text = string.IsNullOrWhiteSpace(_rutaDatos) ? "Ruta de datos no configurada." : _rutaDatos;
-            }
-            else
-            {
-                label1.Text = "Origen:";
-                lblRuta.Text = "Base de datos SQL Server";
-            }
-        }
-
-        private bool ValidarOrigenActual(bool mostrarMensaje = true)
-        {
-            if (_origenDatosActual == OrigenDatosAuxiliar.Nuevos)
-            {
-                return true;
-            }
-
-            return ValidarRutaDatos(mostrarMensaje);
-        }
-
-        private IReadOnlyList<CuentaMayor>ObtenerCatalogoMayorSegunOrigen()
-        {
-            return _origenDatosActual switch
-            {
-                OrigenDatosAuxiliar.Viejos => _contabilidadService.ObtenerCatalogoMayor(_rutaDatos!),
-                OrigenDatosAuxiliar.Nuevos => ObtenerCatalogoMayorNuevo(),
-                _ => []
-            };
-        }
-
-        private IReadOnlyList<CuentaAuxiliar>ObtenerCatalogoAuxiliarSegunOrigen(int rangoInferior, int rangoSuperior)
-        {
-            return _origenDatosActual switch
-            {
-                OrigenDatosAuxiliar.Viejos => _contabilidadService.ObtenerCatalogoAuxiliar(_rutaDatos!, rangoInferior, rangoSuperior),
-                OrigenDatosAuxiliar.Nuevos => ObtenerCatalogoAuxiliarNuevo(rangoInferior, rangoSuperior),
-                _ => []
-            };
-        }
-
-        private AuxiliarResultado ObtenerMovimientosAuxiliarSegunOrigen(int guia, int mesProceso)
-        {
-            return _origenDatosActual switch
-            {
-                OrigenDatosAuxiliar.Viejos => _contabilidadService.ObtenerMovimientosAuxiliar(_rutaDatos!, guia, mesProceso),
-                OrigenDatosAuxiliar.Nuevos => ObtenerMovimientosAuxiliarNuevo(guia, mesProceso),
-                _ => new AuxiliarResultado(0m, [])
-            };
-        }
-
-        private IReadOnlyList<CuentaMayor>ObtenerCatalogoMayorNuevo()
-        {
-            IReadOnlyList<CuentaAuxiliarDbDto> cuentas = _catalogoRepository.ObtenerCuentasParaAuxiliares();
-
-            return cuentas.Select(cuenta => new CuentaMayor(
-                Cuenta: cuenta.Id.ToString(),
-                Nombre: cuenta.Nombre,
-                Saldo: FormatHelper.FormatearImporte(
-                    cuenta.Saldo),
-
-                    // Para Nuevos, RangoInferior guarda CuentaId.
-                    RangoInferior: cuenta.Id,
-
-                    // Solo se usa como indicador informativo.
-                    RangoSuperior: cuenta.NumeroSubcuentas)).ToList();
-        }
-
-        private IReadOnlyList<CuentaAuxiliar>ObtenerCatalogoAuxiliarNuevo(int rangoInferior, int rangoSuperior)
-        {
-            int cuentaId = rangoInferior;
-
-            IReadOnlyList<SubcuentaAuxiliarDbDto> subcuentas = _catalogoRepository.ObtenerSubcuentasParaAuxiliares(cuentaId);
-
-            return subcuentas.Select(subcuenta => new CuentaAuxiliar(
-                Cuenta: subcuenta.Id.ToString(),
-                Nombre: subcuenta.Nombre,
-                Saldo: FormatHelper.FormatearImporte(
-                    subcuenta.Saldo),
-
-                    // Conservamos el padre para consultar movimientos.
-                    RangoInferior: subcuenta.CuentaId,
-                    RangoSuperior: 0,
-
-                    // En Nuevos, Guia representa SubcuentaId.
-                    Guia: subcuenta.Id)).ToList();
-        }
-
-        private AuxiliarResultado ObtenerMovimientosAuxiliarNuevo(int guia, int mesProceso)
-        {
-            if (!_cuentaNuevaActual.HasValue)
-                return new AuxiliarResultado(0m, []);
-
-            ResultadoAuxiliarDbDto resultado = _catalogoRepository.ObtenerMovimientosParaAuxiliar(
-                cuentaId: _cuentaNuevaActual.Value,
-                subcuentaId: _subcuentaNuevaActual,
-                mesProceso: mesProceso);
-
-            List<MovimientoAuxiliar> movimientos = resultado.Movimientos.Select(movimiento => new MovimientoAuxiliar(
-                Fecha: movimiento.Fecha.ToString("dd/MM/yy"),
-                Poliza: movimiento.Folio,
-                Concepto: movimiento.Concepto,
-                Importe: movimiento.Importe,
-                SaldoAcumulado: movimiento.SaldoAcumulado,
-                PolizaId: movimiento.PolizaId)).ToList();
-
-            return new AuxiliarResultado(SaldoInicial: resultado.SaldoInicial, Movimientos: movimientos);
-        }
-
-        // Sustituir por repositorio real
-        //private IReadOnlyList<CuentaMayor>ObtenerCatalogoMayorNuevo()
-        //{
-        //    return _servicioNuevo.ObtenerCatalogoMayor();
-        //}
-
-
     }
 }

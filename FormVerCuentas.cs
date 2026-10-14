@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -208,6 +208,8 @@ namespace CapturaDePolizas_2026_NET8
             ConfigurarColumnaMontoBruto();
             ConfigurarColumnaSubcuentas();
             ConfigurarColumnaNombre();
+            ConfigurarColumnaTipoCuenta();
+            ConfigurarColumnaClasificacion();
         }
 
         private void DeshabilitarOrdenamientoManual()
@@ -249,6 +251,24 @@ namespace CapturaDePolizas_2026_NET8
                 return;
 
             dgvCuentas.Columns["Nombre"].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+        }
+
+        private void ConfigurarColumnaTipoCuenta()
+        {
+            if (dgvCuentas.Columns.Contains("Tipo Cuenta"))
+                dgvCuentas.Columns["Tipo Cuenta"].Visible = false;
+            else if (dgvCuentas.Columns.Contains("tipo_cuenta"))
+                dgvCuentas.Columns["tipo_cuenta"].Visible = false;
+            else if (dgvCuentas.Columns.Contains("TipoCuenta"))
+                dgvCuentas.Columns["TipoCuenta"].Visible = false;
+        }
+
+        private void ConfigurarColumnaClasificacion()
+        {
+            if (dgvCuentas.Columns.Contains("Clasificacion"))
+                dgvCuentas.Columns["Clasificacion"].Visible = false;
+            else if (dgvCuentas.Columns.Contains("clasificacion"))
+                dgvCuentas.Columns["clasificacion"].Visible = false;
         }
 
         #endregion

@@ -320,7 +320,7 @@ public sealed class LegacyFileService
         return resultado;
     }
 
-    private static string CrearLlaveOrdenFecha(string fecha, int poliza)
+    private static string CrearLlaveOrdenFecha(string fecha, short poliza)
     {
         if (fecha.Length < 8)
             return fecha;

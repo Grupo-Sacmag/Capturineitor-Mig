@@ -1,4 +1,4 @@
-﻿using CapturaDePolizas_2026_NET8.Models;
+using CapturaDePolizas_2026_NET8.Models;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -7,14 +7,9 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace CapturaDePolizas_2026_NET8.Repositories
-{    
+{
     public interface ICatalogoRepository
-    {        
-        IReadOnlyList<CuentaAuxiliarDbDto> ObtenerCuentasParaAuxiliares();
-        IReadOnlyList<SubcuentaAuxiliarDbDto> ObtenerSubcuentasParaAuxiliares(int cuentaId);
-        ResultadoAuxiliarDbDto ObtenerMovimientosParaAuxiliar(int cuentaId, int? subcuentaId, int mesProceso = 0);
-        PolizaAuxiliarDbDto? ObtenerPolizaParaAuxiliar(int polizaId);
-        bool PuedeConectarBaseDatos();
+    {
         bool ValidarCuenta(string cuentaId, out string nombreCuenta);
         bool ValidarSubcuenta(string subcuentaId, string cuentaPadreId, out string nombreSubcuenta);
         int ObtenerSiguienteFolio();
@@ -27,5 +22,6 @@ namespace CapturaDePolizas_2026_NET8.Repositories
         DataTable ObtenerTablaPolizas();
         DataTable ObtenerMovimientosPoliza(int polizaId);
         DataTable ObtenerTablaVacia();
+        DataTable ObtenerEstadosFinancieros(bool incluirCuentasOrden);
     }
 }
