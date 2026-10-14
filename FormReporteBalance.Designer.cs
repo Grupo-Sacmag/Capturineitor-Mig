@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+using System.Drawing;
 using System.Windows.Forms;
 
 namespace CapturaDePolizas_2026_NET8
@@ -9,6 +9,7 @@ namespace CapturaDePolizas_2026_NET8
 
         private Panel pnlTop;
         private Label lblTitulo;
+        private Panel pnlGridContainer;
         private DataGridView dgv;
 
         protected override void Dispose(bool disposing)
@@ -27,11 +28,13 @@ namespace CapturaDePolizas_2026_NET8
             pnlTop = new Panel();
             lblTitulo = new Label();
             lblEmpresa = new Label();
+            pnlGridContainer = new Panel();
             dgv = new DataGridView();
             menuStrip1 = new MenuStrip();
             tsImprimir = new ToolStripMenuItem();
             PrintDoc = new System.Drawing.Printing.PrintDocument();
             pnlTop.SuspendLayout();
+            pnlGridContainer.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgv).BeginInit();
             menuStrip1.SuspendLayout();
             SuspendLayout();
@@ -70,10 +73,23 @@ namespace CapturaDePolizas_2026_NET8
             lblEmpresa.Text = "SACMAG DE MEXICO SA DE CV";
             lblEmpresa.TextAlign = ContentAlignment.MiddleCenter;
             // 
+            // pnlGridContainer
+            // 
+            pnlGridContainer.BackColor = Color.White;
+            pnlGridContainer.Controls.Add(dgv);
+            pnlGridContainer.Dock = DockStyle.Fill;
+            pnlGridContainer.Location = new Point(0, 104);
+            pnlGridContainer.Name = "pnlGridContainer";
+            pnlGridContainer.Padding = new Padding(35, 0, 35, 10);
+            pnlGridContainer.Size = new Size(1100, 646);
+            pnlGridContainer.TabIndex = 3;
+            // 
             // dgv
             // 
             dgv.AllowUserToAddRows = false;
             dgv.AllowUserToDeleteRows = false;
+            dgv.AllowUserToResizeColumns = false;
+            dgv.AllowUserToResizeRows = false;
             dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dgv.BackgroundColor = Color.White;
             dgv.BorderStyle = BorderStyle.None;
@@ -83,20 +99,22 @@ namespace CapturaDePolizas_2026_NET8
             dataGridViewCellStyle1.BackColor = SystemColors.Window;
             dataGridViewCellStyle1.Font = new Font("Arial", 7.5F);
             dataGridViewCellStyle1.ForeColor = SystemColors.ControlText;
-            dataGridViewCellStyle1.SelectionBackColor = Color.White;
-            dataGridViewCellStyle1.SelectionForeColor = Color.Black;
+            dataGridViewCellStyle1.SelectionBackColor = Color.FromArgb(0, 120, 215);
+            dataGridViewCellStyle1.SelectionForeColor = Color.White;
             dataGridViewCellStyle1.WrapMode = DataGridViewTriState.False;
             dgv.DefaultCellStyle = dataGridViewCellStyle1;
             dgv.Dock = DockStyle.Fill;
-            dgv.Location = new Point(0, 104);
+            dgv.Location = new Point(35, 0);
             dgv.Name = "dgv";
             dgv.ReadOnly = true;
             dgv.RowHeadersVisible = false;
-            dgv.RowTemplate.Height = 15;
-            dgv.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgv.Size = new Size(1100, 646);
+            dgv.RowTemplate.Height = 22;
+            dgv.SelectionMode = DataGridViewSelectionMode.CellSelect;
+            dgv.Size = new Size(1030, 636);
             dgv.TabIndex = 0;
             dgv.CellFormatting += Dgv_CellFormatting;
+            dgv.CellPainting += Dgv_CellPainting;
+            dgv.RowPostPaint += Dgv_RowPostPaint;
             dgv.DataBindingComplete += Dgv_DataBindingComplete;
             // 
             // menuStrip1
@@ -124,15 +142,18 @@ namespace CapturaDePolizas_2026_NET8
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1100, 750);
-            Controls.Add(dgv);
+            Controls.Add(pnlGridContainer);
             Controls.Add(pnlTop);
             Controls.Add(menuStrip1);
             MainMenuStrip = menuStrip1;
+            FormBorderStyle = FormBorderStyle.FixedSingle;
+            MaximizeBox = false;
             Name = "FormReporteBalance";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Cg: Estados financieros";
-            WindowState = FormWindowState.Maximized;
+            WindowState = FormWindowState.Normal;
             pnlTop.ResumeLayout(false);
+            pnlGridContainer.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)dgv).EndInit();
             menuStrip1.ResumeLayout(false);
             menuStrip1.PerformLayout();

@@ -1,4 +1,4 @@
-﻿using CapturaDePolizas_2026_NET8.Repositories;
+using CapturaDePolizas_2026_NET8.Repositories;
 using System.Data;
 using System.Globalization;
 
@@ -14,7 +14,7 @@ public partial class FormVerPolizas : Form
 
     public FormVerPolizas(
         DataTable datos,
-        bool iniciarComoCheque,
+        bool? iniciarComoCheque,
         ICatalogoRepository catalogoRepository)
     {
         ArgumentNullException.ThrowIfNull(datos);
@@ -31,7 +31,7 @@ public partial class FormVerPolizas : Form
 
     #region Inicialización
 
-    private void InicializarFormulario(bool iniciarComoCheque)
+    private void InicializarFormulario(bool? iniciarComoCheque)
     {
         ConfigurarFormulario();
         ConfigurarControles();
@@ -44,6 +44,14 @@ public partial class FormVerPolizas : Form
         ConfigurarColumnasGrid();
         AplicarEstadoInicial(iniciarComoCheque);
         AplicarFiltros();
+
+        Shown += (s, e) =>
+        {
+            if (dgvPolizas.Rows.Count > 0)
+            {
+                dgvPolizas.Focus();
+            }
+        };
     }
 
     private void ConfigurarFormulario()
@@ -101,19 +109,23 @@ public partial class FormVerPolizas : Form
         cmbOrden.SelectedIndex = 0;
     }
 
-    private void AplicarEstadoInicial(bool iniciarComoCheque)
+    private void AplicarEstadoInicial(bool? iniciarComoCheque)
     {
         _eventosDeshabilitados = true;
 
         try
         {
-            if (iniciarComoCheque)
+            if (iniciarComoCheque == true)
             {
                 rbCheque.Checked = true;
             }
-            else
+            else if (iniciarComoCheque == false)
             {
                 rbPoliza.Checked = true;
+            }
+            else
+            {
+                rbTodos.Checked = true;
             }
 
             ActualizarEstadoControlesFecha();
@@ -200,6 +212,17 @@ public partial class FormVerPolizas : Form
             return;
 
         AbrirDetallePolizaSeleccionada();
+    }
+
+    protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+    {
+        if (keyData == Keys.Enter)
+        {
+            AbrirDetallePolizaSeleccionada();
+            return true;
+        }
+
+        return base.ProcessCmdKey(ref msg, keyData);
     }
 
     #endregion

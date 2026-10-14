@@ -35,7 +35,6 @@
             mnuCaptura = new ToolStripMenuItem();
             mnuCapturaPoliza = new ToolStripMenuItem();
             mnuCapturaCheque = new ToolStripMenuItem();
-            tsAuxiliares = new ToolStripMenuItem();
             mnuVer = new ToolStripMenuItem();
             mnuVerCuentas = new ToolStripMenuItem();
             mnuVerSubcuentas = new ToolStripMenuItem();
@@ -68,6 +67,7 @@
             dgvMovimientos = new DataGridView();
             pnlTotales = new Panel();
             lblResumenSuma = new Label();
+            tsAuxiliares = new ToolStripMenuItem();
             menuStrip.SuspendLayout();
             pnlCabeceraComun.SuspendLayout();
             pnlCamposCheque.SuspendLayout();
@@ -134,23 +134,16 @@
             // mnuCapturaPoliza
             // 
             mnuCapturaPoliza.Name = "mnuCapturaPoliza";
-            mnuCapturaPoliza.Size = new Size(115, 22);
+            mnuCapturaPoliza.Size = new Size(180, 22);
             mnuCapturaPoliza.Text = "Póliza";
             mnuCapturaPoliza.Click += MnuCapturaPoliza_Click;
             // 
             // mnuCapturaCheque
             // 
             mnuCapturaCheque.Name = "mnuCapturaCheque";
-            mnuCapturaCheque.Size = new Size(115, 22);
+            mnuCapturaCheque.Size = new Size(180, 22);
             mnuCapturaCheque.Text = "Cheque";
             mnuCapturaCheque.Click += MnuCapturaCheque_Click;
-            // 
-            // tsAuxiliares
-            // 
-            tsAuxiliares.Name = "tsAuxiliares";
-            tsAuxiliares.Size = new Size(69, 20);
-            tsAuxiliares.Text = "Auxiliares";
-            tsAuxiliares.Click += tsAuxiliares_Click;
             // 
             // mnuVer
             // 
@@ -165,7 +158,6 @@
             mnuVerCuentas.ShortcutKeys = Keys.Control | Keys.M;
             mnuVerCuentas.Size = new Size(217, 22);
             mnuVerCuentas.Text = "Cuentas";
-            mnuVerCuentas.Click += MnuVerCuentas_Click;
             // 
             // mnuVerSubcuentas
             // 
@@ -194,7 +186,6 @@
             mnuVerEstadosFinancieros.ShortcutKeys = Keys.Control | Keys.E;
             mnuVerEstadosFinancieros.Size = new Size(217, 22);
             mnuVerEstadosFinancieros.Text = "Estados Financieros";
-            mnuVerEstadosFinancieros.Click += mnuVerEstadosFinancieros_Click;
             // 
             // pnlCabeceraComun
             // 
@@ -470,6 +461,13 @@
             lblResumenSuma.Size = new Size(377, 16);
             lblResumenSuma.TabIndex = 0;
             lblResumenSuma.Text = "Suma Debe: 0.00 | Suma Haber: 0.00 | Diferencia: 0.00";
+            // 
+            // tsAuxiliares
+            // 
+            tsAuxiliares.Name = "tsAuxiliares";
+            tsAuxiliares.Size = new Size(69, 20);
+            tsAuxiliares.Text = "Auxiliares";
+            tsAuxiliares.Click += tsAuxiliares_Click;
             // 
             // FormCaptura
             // 

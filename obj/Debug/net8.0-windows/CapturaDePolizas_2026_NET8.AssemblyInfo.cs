@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CapturaDePolizas_2026_NET8")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b1e6ddedd15253ad2856698d73df2e30af6963b2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7906951d28f957638f815dc87687c5078cc9c3b8")]
 [assembly: System.Reflection.AssemblyProductAttribute("CapturaDePolizas_2026_NET8")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CapturaDePolizas_2026_NET8")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

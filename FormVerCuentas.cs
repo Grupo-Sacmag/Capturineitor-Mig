@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using CapturaDePolizas_2026_NET8.Repositories;
 
 namespace CapturaDePolizas_2026_NET8
 {
@@ -15,10 +16,11 @@ namespace CapturaDePolizas_2026_NET8
     {
         private readonly DataTable _datosOriginales;
         private readonly DataView _vistaFiltrada;
+        private readonly ICatalogoRepository? _catalogoRepository;
 
         private bool _eventosDeshabilitados;
 
-        public FormVerCuentas(DataTable datos)
+        public FormVerCuentas(DataTable datos, ICatalogoRepository? catalogoRepository = null)
         {
             ArgumentNullException.ThrowIfNull(datos);
 
@@ -26,6 +28,7 @@ namespace CapturaDePolizas_2026_NET8
 
             _datosOriginales = datos;
             _vistaFiltrada = new DataView(_datosOriginales);
+            _catalogoRepository = catalogoRepository;
 
             InicializarFormulario();
         }
@@ -104,6 +107,48 @@ namespace CapturaDePolizas_2026_NET8
             cmbColumna.SelectedIndexChanged += Filtros_Changed;
 
             btnRestablecer.Click += BtnRestablecer_Click;
+            dgvCuentas.CellDoubleClick += DgvCuentas_CellDoubleClick;
+        }
+
+        private void DgvCuentas_CellDoubleClick(object? sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0)
+            {
+                AbrirSubcuentasDeCuentaSeleccionada();
+            }
+        }
+
+        private void AbrirSubcuentasDeCuentaSeleccionada()
+        {
+            if (dgvCuentas.CurrentRow?.DataBoundItem is not DataRowView drv)
+                return;
+
+            if (int.TryParse(drv["Número"]?.ToString(), out int cuentaId))
+            {
+                try
+                {
+                    var repo = _catalogoRepository ?? new CatalogoRepository();
+                    DataTable datosSubcuentas = repo.ObtenerTablaSubcuentas();
+
+                    using var form = new FormVerSubcuentas(datosSubcuentas, repo, cuentaId);
+                    form.ShowDialog(this);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error al abrir las subcuentas: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            if (keyData == Keys.Enter && (dgvCuentas.Focused || dgvCuentas.ContainsFocus))
+            {
+                AbrirSubcuentasDeCuentaSeleccionada();
+                return true;
+            }
+
+            return base.ProcessCmdKey(ref msg, keyData);
         }
 
         #endregion

@@ -20,6 +20,7 @@ namespace CapturaDePolizas_2026_NET8.Repositories
         DataTable ObtenerCuentasBusqueda();
         DataTable ObtenerSubcuentasBusqueda(int cuentaId);
         DataTable ObtenerTablaPolizas();
+        DataTable ObtenerTablaPolizasPorSubcuenta(int cuentaId, int subcuentaId);
         DataTable ObtenerMovimientosPoliza(int polizaId);
         DataTable ObtenerTablaVacia();
         DataTable ObtenerEstadosFinancieros(bool incluirCuentasOrden);

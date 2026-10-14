@@ -370,7 +370,7 @@ public partial class FormCaptura : Form
         {
             DataTable datos = _catalogoRepository.ObtenerTablaCuentas();
 
-            using FormVerCuentas form = new(datos);
+            using FormVerCuentas form = new(datos, _catalogoRepository);
             form.ShowDialog(this);
         }
         catch (Exception ex)
@@ -441,12 +441,12 @@ public partial class FormCaptura : Form
             var result = MessageBox.Show("¿Quieres incluir las cuentas de orden?", "Estados Financieros", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
             if (result == DialogResult.Cancel)
                 return;
-
+                
             bool incluirCuentasOrden = result == DialogResult.Yes;
 
             DataTable datos = _catalogoRepository.ObtenerEstadosFinancieros(incluirCuentasOrden);
 
-            using FormReporteBalance form = new(datos);
+            using FormReporteBalance form = new(datos, _catalogoRepository);
             form.ShowDialog(this);
         }
         catch (Exception ex)
@@ -1822,27 +1822,6 @@ public partial class FormCaptura : Form
             // Se muestra la misma instancia de FormCaptura.
             Show();
             Activate();
-        }
-    }
-
-    private void mnuVerEstadosFinancieros_Click(object sender, EventArgs e)
-    {
-        try
-        {
-            var result = MessageBox.Show("¿Quieres incluir las cuentas de orden?", "Estados Financieros", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
-            if (result == DialogResult.Cancel)
-                return;
-
-            bool incluirCuentasOrden = result == DialogResult.Yes;
-
-            DataTable datos = _catalogoRepository.ObtenerEstadosFinancieros(incluirCuentasOrden);
-
-            using FormReporteBalance form = new(datos);
-            form.ShowDialog(this);
-        }
-        catch (Exception ex)
-        {
-            MostrarError("Error al abrir estados financieros", ex);
         }
     }
 }

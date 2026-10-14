@@ -143,12 +143,35 @@ namespace CapturaDePolizas_2026_NET8.Repositories
 
             var subcuentas = db.Subcuentas.AsNoTracking().Where(s => s.Activa).OrderBy(s => s.CuentaId).ThenBy(s => s.Id).ToList();
 
+            var acumulados = db.Movimientos.AsNoTracking()
+                .Where(m => m.SubcuentaId.HasValue)
+                .GroupBy(m => new { m.CuentaId, SubcuentaId = m.SubcuentaId!.Value })
+                .Select(g => new
+                {
+                    g.Key.CuentaId,
+                    g.Key.SubcuentaId,
+                    TotalDebe = g.Sum(m => m.Debe),
+                    TotalHaber = g.Sum(m => m.Haber)
+                })
+                .ToDictionary(k => (k.CuentaId, k.SubcuentaId));
+
             foreach (Subcuenta subcuenta in subcuentas)
             {
+                decimal totalDebe = 0;
+                decimal totalHaber = 0;
+
+                if (acumulados.TryGetValue((subcuenta.CuentaId, subcuenta.Id), out var ac))
+                {
+                    totalDebe = ac.TotalDebe;
+                    totalHaber = ac.TotalHaber;
+                }
+
                 tabla.Rows.Add(
                     subcuenta.CuentaId,
                     subcuenta.Id,
                     subcuenta.Nombre.ToUpper(),
+                    totalDebe,
+                    totalHaber,
                     subcuenta.ImporteNeto
                 );
             }
@@ -203,6 +226,48 @@ namespace CapturaDePolizas_2026_NET8.Repositories
             using var db = new EmpresaDbContext();
 
             var polizas = db.Polizas.AsNoTracking().OrderBy(p => p.Folio).ToList();
+
+            foreach (Poliza poliza in polizas)
+            {
+                tabla.Rows.Add(
+                    poliza.Id,
+                    poliza.Fecha,
+                    poliza.Folio,
+                    poliza.Concepto.ToUpper(),
+                    poliza.EsCostos,
+                    poliza.TipoCaptura,
+                    poliza.TotalDebe,
+                    poliza.TotalHaber,
+                    poliza.Beneficiario.ToUpper(),
+                    poliza.MontoCheque,
+                    poliza.NumeroCheque.ToUpper(),
+                    poliza.RFC.ToUpper(),
+                    poliza.FoliosFiscales.ToUpper(),
+                    poliza.RequiereImpresion,
+                    poliza.CreadoEn
+                );
+            }
+
+            return tabla;
+        }
+
+        public DataTable ObtenerTablaPolizasPorSubcuenta(int cuentaId, int subcuentaId)
+        {
+            DataTable tabla = CrearTablaPolizas();
+
+            using var db = new EmpresaDbContext();
+
+            var polizaIds = db.Movimientos.AsNoTracking()
+                .Where(m => m.CuentaId == cuentaId && m.SubcuentaId == subcuentaId)
+                .Select(m => m.PolizaId)
+                .Distinct()
+                .ToList();
+
+            var polizas = db.Polizas.AsNoTracking()
+                .Where(p => polizaIds.Contains(p.Id))
+                .OrderByDescending(p => p.Fecha)
+                .ThenByDescending(p => p.Folio)
+                .ToList();
 
             foreach (Poliza poliza in polizas)
             {
@@ -444,6 +509,8 @@ namespace CapturaDePolizas_2026_NET8.Repositories
             tabla.Columns.Add("Cuenta", typeof(int));
             tabla.Columns.Add("Subcuenta", typeof(int));
             tabla.Columns.Add("Nombre", typeof(string));
+            tabla.Columns.Add("Debe", typeof(decimal));
+            tabla.Columns.Add("Haber", typeof(decimal));
             tabla.Columns.Add("Importe Neto", typeof(decimal));
 
             return tabla;

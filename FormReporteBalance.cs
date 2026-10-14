@@ -8,19 +8,21 @@ using System.Linq;
 using System.IO;
 using GaCostos;
 using GaCostos.Services;
+using CapturaDePolizas_2026_NET8.Repositories;
 
 namespace CapturaDePolizas_2026_NET8
 {
     public partial class FormReporteBalance : Form
     {
         private readonly DataTable _datos;
+        private readonly ICatalogoRepository? _catalogoRepository;
 
         // Fuentes cacheadas por estilo (evita crear una Font por cada celda)
         private readonly Dictionary<FontStyle, Font> _fuentes = new();
 
         // ---- Parámetros de impresión (unidades = 1/100 de pulgada) ----
         private const float AnchoNatural = 1000f;   // ancho lógico del reporte
-        private const float AltoFila = 16f;
+        private const float AltoFila = 22f;
         private const float AltoLinea = 26f;        // alto de cada línea del encabezado
         private const float AltoEncabezado = AltoLinea * 2 + 10f;
         private const float EscalaMinima = 0.6f;    // mínimo antes de paginar
@@ -29,13 +31,31 @@ namespace CapturaDePolizas_2026_NET8
         private int _filaActual;
 
 
-        public FormReporteBalance(DataTable datos)
+        public FormReporteBalance(DataTable datos, ICatalogoRepository? catalogoRepository = null)
         {
             _datos = datos;
+            _catalogoRepository = catalogoRepository;
 
             InitializeComponent();
 
             dgv.DataSource = _datos;
+            dgv.CellDoubleClick += Dgv_CellDoubleClick;
+            dgv.CurrentCellChanged += (s, e) => dgv.Invalidate();
+            Shown += (s, e) =>
+            {
+                if (dgv.Rows.Count > 0)
+                {
+                    dgv.Focus();
+                }
+            };
+        }
+
+        private void Dgv_CellDoubleClick(object? sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0)
+            {
+                AbrirCuentaSeleccionada();
+            }
         }
 
         // =====================================================
@@ -53,24 +73,125 @@ namespace CapturaDePolizas_2026_NET8
         {
             if (e.Value == null) return;
 
-            var estilo = ObtenerEstilo(e.Value.ToString() ?? "", e.ColumnIndex);
+            var estilo = ObtenerEstilo(e.Value.ToString() ?? "", e.ColumnIndex, e.RowIndex);
             if (estilo is null) return;
 
             e.CellStyle.ForeColor = estilo.Value.Color;
             e.CellStyle.Font = ObtenerFuente(estilo.Value.Estilo);
+            e.CellStyle.SelectionBackColor = Color.FromArgb(0, 120, 215);
+            e.CellStyle.SelectionForeColor = Color.White;
 
             if (estilo.Value.Alineacion is { } alineacion)
                 e.CellStyle.Alignment = alineacion;
         }
 
+        private void Dgv_CellPainting(object? sender, DataGridViewCellPaintingEventArgs e)
+        {
+            if (e.RowIndex >= 0 && EsFilaCuentaDeOrden(e.RowIndex))
+            {
+                using var brush = new SolidBrush(Color.White);
+                e.Graphics.FillRectangle(brush, e.CellBounds);
+                e.Handled = true;
+            }
+        }
+
+        private void Dgv_RowPostPaint(object? sender, DataGridViewRowPostPaintEventArgs e)
+        {
+            if (e.RowIndex < 0 || !EsFilaCuentaDeOrden(e.RowIndex))
+                return;
+
+            var g = e.Graphics;
+            var estado = g.Save();
+            g.SetClip(e.RowBounds);
+
+            float totalWidth = dgv.Columns.Cast<DataGridViewColumn>().Where(c => c.Visible).Sum(c => c.Width);
+            float xCenter = totalWidth / 2f;
+
+            string textoCol0 = Convert.ToString(dgv.Rows[e.RowIndex].Cells[0].Value)?.Trim() ?? "";
+            if (string.IsNullOrWhiteSpace(textoCol0))
+            {
+                g.Restore(estado);
+                return;
+            }
+
+            if (textoCol0 == "CUENTAS DE ORDEN")
+            {
+                using var formatoCentrado = new StringFormat
+                {
+                    Alignment = StringAlignment.Center,
+                    LineAlignment = StringAlignment.Center,
+                    FormatFlags = StringFormatFlags.NoWrap
+                };
+                using var pincelAzul = new SolidBrush(Color.Blue);
+                g.DrawString("CUENTAS DE ORDEN", ObtenerFuente(FontStyle.Bold), pincelAzul,
+                    new RectangleF(0, e.RowBounds.Y, totalWidth, e.RowBounds.Height), formatoCentrado);
+                g.Restore(estado);
+                return;
+            }
+
+            // Fila de cuenta de orden
+            string desc = textoCol0;
+            string monto = dgv.Rows[e.RowIndex].Cells[1].FormattedValue?.ToString()?.Trim() ?? "";
+
+            bool isSelected = dgv.CurrentCell != null && dgv.CurrentCell.RowIndex == e.RowIndex;
+
+            float anchoDesc = 330f;
+            float anchoMonto = 140f;
+            float separacion = 10f;
+            float anchoTotalBloque = anchoDesc + separacion + anchoMonto;
+
+            float xInicio = xCenter - (anchoTotalBloque / 2f);
+            float xMonto = xInicio + anchoDesc + separacion;
+
+            if (isSelected)
+            {
+                using var pincelSel = new SolidBrush(Color.FromArgb(0, 120, 215));
+                g.FillRectangle(pincelSel, xInicio - 5, e.RowBounds.Y + 1, anchoTotalBloque + 10, e.RowBounds.Height - 2);
+            }
+
+            Brush pincelTexto = isSelected ? Brushes.White : Brushes.Black;
+
+            using (var formatoDesc = new StringFormat
+            {
+                Alignment = StringAlignment.Near,
+                LineAlignment = StringAlignment.Center,
+                FormatFlags = StringFormatFlags.NoWrap,
+                Trimming = StringTrimming.EllipsisCharacter
+            })
+            {
+                g.DrawString(desc, ObtenerFuente(FontStyle.Regular), pincelTexto,
+                    new RectangleF(xInicio, e.RowBounds.Y, anchoDesc, e.RowBounds.Height), formatoDesc);
+            }
+
+            if (!string.IsNullOrEmpty(monto))
+            {
+                using var formatoMonto = new StringFormat
+                {
+                    Alignment = StringAlignment.Far,
+                    LineAlignment = StringAlignment.Center,
+                    FormatFlags = StringFormatFlags.NoWrap
+                };
+                g.DrawString(monto, ObtenerFuente(FontStyle.Regular), pincelTexto,
+                    new RectangleF(xMonto, e.RowBounds.Y, anchoMonto, e.RowBounds.Height), formatoMonto);
+            }
+
+            g.Restore(estado);
+        }
+
         private void Dgv_DataBindingComplete(object? sender, DataGridViewBindingCompleteEventArgs e)
         {
+            if (dgv.Columns.Contains("CtaIzq"))
+                dgv.Columns["CtaIzq"].Visible = false;
+
+            if (dgv.Columns.Contains("CtaDer"))
+                dgv.Columns["CtaDer"].Visible = false;
+
             if (dgv.Columns.Count >= 4)
             {
-                dgv.Columns[0].FillWeight = 65;
-                dgv.Columns[1].FillWeight = 35;
-                dgv.Columns[2].FillWeight = 65;
-                dgv.Columns[3].FillWeight = 35;
+                dgv.Columns[0].FillWeight = 75;
+                dgv.Columns[1].FillWeight = 25;
+                dgv.Columns[2].FillWeight = 75;
+                dgv.Columns[3].FillWeight = 25;
 
                 dgv.Columns[1].DefaultCellStyle.Alignment =
                     DataGridViewContentAlignment.MiddleRight;
@@ -136,6 +257,68 @@ namespace CapturaDePolizas_2026_NET8
 
             for (int i = _filaActual; i < fin; i++, y += AltoFila)
             {
+                if (EsFilaCuentaDeOrden(i))
+                {
+                    string textoCol0 = dgv.Rows[i].Cells[0].Value?.ToString()?.Trim() ?? "";
+                    if (!string.IsNullOrWhiteSpace(textoCol0))
+                    {
+                        float xCenter = AnchoNatural / 2f;
+
+                        if (textoCol0 == "CUENTAS DE ORDEN")
+                        {
+                            using var pincelAzul = new SolidBrush(Color.Blue);
+                            using var formatoCentrado = new StringFormat
+                            {
+                                Alignment = StringAlignment.Center,
+                                LineAlignment = StringAlignment.Center,
+                                FormatFlags = StringFormatFlags.NoWrap
+                            };
+                            g.DrawString("CUENTAS DE ORDEN", ObtenerFuente(FontStyle.Bold), pincelAzul,
+                                new RectangleF(0, y, AnchoNatural, AltoFila), formatoCentrado);
+                        }
+                        else
+                        {
+                            string desc = textoCol0;
+                            string monto = dgv.Rows[i].Cells[1].FormattedValue?.ToString()?.Trim() ?? "";
+
+                            float anchoDesc = 330f;
+                            float anchoMonto = 140f;
+                            float separacion = 10f;
+                            float anchoTotalBloque = anchoDesc + separacion + anchoMonto;
+
+                            float xInicio = xCenter - (anchoTotalBloque / 2f);
+                            float xMonto = xInicio + anchoDesc + separacion;
+
+                            using var pincelNegro = new SolidBrush(Color.Black);
+
+                            using (var formatoDesc = new StringFormat
+                            {
+                                Alignment = StringAlignment.Near,
+                                LineAlignment = StringAlignment.Center,
+                                FormatFlags = StringFormatFlags.NoWrap,
+                                Trimming = StringTrimming.EllipsisCharacter
+                            })
+                            {
+                                g.DrawString(desc, ObtenerFuente(FontStyle.Regular), pincelNegro,
+                                    new RectangleF(xInicio, y, anchoDesc, AltoFila), formatoDesc);
+                            }
+
+                            if (!string.IsNullOrEmpty(monto))
+                            {
+                                using var formatoMonto = new StringFormat
+                                {
+                                    Alignment = StringAlignment.Far,
+                                    LineAlignment = StringAlignment.Center,
+                                    FormatFlags = StringFormatFlags.NoWrap
+                                };
+                                g.DrawString(monto, ObtenerFuente(FontStyle.Regular), pincelNegro,
+                                    new RectangleF(xMonto, y, anchoMonto, AltoFila), formatoMonto);
+                            }
+                        }
+                    }
+                    continue;
+                }
+
                 float x = 0;
 
                 for (int j = 0; j < cols.Count; j++)
@@ -155,7 +338,7 @@ namespace CapturaDePolizas_2026_NET8
                         FontStyle estiloFuente = FontStyle.Regular;
 
                         // Mismas reglas que CellFormatting
-                        var estilo = ObtenerEstilo(celda.Value?.ToString() ?? "", col.Index);
+                        var estilo = ObtenerEstilo(celda.Value?.ToString() ?? "", col.Index, i);
                         if (estilo is not null)
                         {
                             color = estilo.Value.Color;
@@ -188,10 +371,17 @@ namespace CapturaDePolizas_2026_NET8
                 ImprimirReporte();
                 return true;
             }
+
+            if (keyData == Keys.Enter && (dgv.Focused || dgv.ContainsFocus))
+            {
+                AbrirCuentaSeleccionada();
+                return true;
+            }
+
             return base.ProcessCmdKey(ref msg, keyData);
         }
 
-        private static EstiloReporte? ObtenerEstilo(string text, int columnIndex)
+        private EstiloReporte? ObtenerEstilo(string text, int columnIndex, int rowIndex = -1)
         {
             if (text == "A C T I V O" ||
                 text == "P A S I V O" ||
@@ -224,10 +414,34 @@ namespace CapturaDePolizas_2026_NET8
                 return new EstiloReporte(
                     Color.Blue,
                     FontStyle.Bold,
-                    columnIndex == 0 ? DataGridViewContentAlignment.MiddleRight : null);
+                    columnIndex == 0 ? DataGridViewContentAlignment.MiddleCenter : null);
+            }
+
+            if (rowIndex >= 0 && columnIndex == 0 && EsFilaCuentaDeOrden(rowIndex) && !string.IsNullOrWhiteSpace(text))
+            {
+                return new EstiloReporte(
+                    Color.Black,
+                    FontStyle.Regular,
+                    DataGridViewContentAlignment.MiddleCenter);
             }
 
             return null;
+        }
+
+        private bool EsFilaCuentaDeOrden(int rowIndex)
+        {
+            if (rowIndex < 0 || rowIndex >= _datos.Rows.Count)
+                return false;
+
+            for (int i = 0; i <= rowIndex; i++)
+            {
+                if (Convert.ToString(_datos.Rows[i][0])?.Trim() == "CUENTAS DE ORDEN")
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private Font ObtenerFuente(FontStyle estilo)
@@ -361,48 +575,31 @@ namespace CapturaDePolizas_2026_NET8
         {
             if (dgv.CurrentCell is null) return;
 
-            bool ladoIzquierdo = dgv.CurrentCell.ColumnIndex <= 1;
+            bool esOrden = EsFilaCuentaDeOrden(dgv.CurrentCell.RowIndex);
+            bool ladoIzquierdo = esOrden || dgv.CurrentCell.ColumnIndex <= 1;
             string colCuenta = ladoIzquierdo ? "CtaIzq" : "CtaDer";
 
             if (!_datos.Columns.Contains(colCuenta) || dgv.CurrentCell.OwningRow?.DataBoundItem is not DataRowView drv)
                 return;
 
-            string cuenta = Convert.ToString(drv.Row[colCuenta])?.Trim() ?? "";
-            if (cuenta.Length == 0)
+            string cuentaTexto = Convert.ToString(drv.Row[colCuenta])?.Trim() ?? "";
+            if (string.IsNullOrEmpty(cuentaTexto) || !int.TryParse(cuentaTexto, out int cuentaId) || cuentaId <= 0)
             {
                 System.Media.SystemSounds.Beep.Play();   // título, suma o renglón vacío
                 return;
             }
 
-            // El texto del renglón ya viene como "Id Nombre"
-            string texto = Convert.ToString(drv.Row[ladoIzquierdo ? 0 : 2])?.Trim() ?? cuenta;
-
             try
             {
-                string? ruta = new ConfigService().LeerRutaDatos();
+                var repo = _catalogoRepository ?? new CatalogoRepository();
+                DataTable datosSubcuentas = repo.ObtenerTablaSubcuentas();
 
-                if (string.IsNullOrWhiteSpace(ruta) || !Directory.Exists(ruta))
-                {
-                    MessageBox.Show(this, "La ruta de datos del Auxiliar no está configurada. Configúrela desde el menú AUXILIARES.", "Estados Financieros", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return;
-                }
-
-                var mayor = new ContabilidadService()
-                    .ObtenerCatalogoMayor(ruta)
-                    .FirstOrDefault(c => MismaCuenta(c.Cuenta, cuenta));
-
-                if (mayor is null || mayor.RangoInferior <= 0 || mayor.RangoSuperior <= 0)
-                {
-                    MessageBox.Show(this, $"No se encontraron subcuentas para la cuenta {cuenta} en el catálogo de auxiliares.", "Estados Financieros", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return;
-                }
-
-                using var auxiliar = new FormAuxiliar(mayor.RangoInferior, mayor.RangoSuperior, "Cuenta: " + texto);
-                auxiliar.ShowDialog(this);
+                using var formSubcuentas = new FormVerSubcuentas(datosSubcuentas, repo, cuentaId);
+                formSubcuentas.ShowDialog(this);
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, "No se pudo abrir el detalle de la cuenta:\n" + ex.Message, "Estados Financieros", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, "No se pudo abrir el detalle de las subcuentas:\n" + ex.Message, "Estados Financieros", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
 
             dgv.Focus();
