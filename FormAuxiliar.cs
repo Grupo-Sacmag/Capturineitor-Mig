@@ -22,6 +22,8 @@ namespace GaCostos
         private int _rangoInferiorActual;
         private int _rangoSuperiorActual;
         private bool _cierreConfirmado;
+        private OrigenDatos _origen = OrigenDatos.Archivos;
+        private ToolStripMenuItem? _menuOrigenBd;
 
         public FormAuxiliar() : this(modoConsulta : false)
         {
@@ -61,7 +63,8 @@ namespace GaCostos
             dgvPrincipal.ColumnHeadersDefaultCellStyle.BackColor = Color.Gainsboro;
             dgvPrincipal.ColumnHeadersDefaultCellStyle.Font = new Font(dgvPrincipal.Font, FontStyle.Bold);
 
-            dgvPrincipal.CellDoubleClick += DgvPrincipal_CellDoubleClick;            
+            dgvPrincipal.CellDoubleClick += DgvPrincipal_CellDoubleClick;
+            dgvPrincipal.KeyDown += DgvPrincipal_KeyDown;            
 
             btnRegresar.Click += BtnRegresar_Click;
 
@@ -70,6 +73,12 @@ namespace GaCostos
             menuVerificarArchivos.Click += MenuVerificarArchivos_Click;
 
             menuVersion.Click += MenuVersion_Click;
+
+            _menuOrigenBd = new ToolStripMenuItem("Usar base de datos") { CheckOnClick = true };
+            _menuOrigenBd.Click += MenuOrigenBd_Click;
+            menuArchivo.DropDownItems.Add(_menuOrigenBd);
+
+            InicializarMenusJson();
 
             menuSeleccionFilaCompleta.CheckOnClick = true;
             menuSeleccionFilaCompleta.Checked = true;
@@ -143,6 +152,14 @@ namespace GaCostos
 
         private void CargarRutaInicial()
         {
+            if (SesionTrabajoJson.UsarJson && SesionTrabajoJson.Actual is not null)
+            {
+                _jsonActual = SesionTrabajoJson.Actual;
+                _rutaJson = SesionTrabajoJson.RutaArchivo;
+                ActivarOrigenJson();
+                return;
+            }
+
             _rutaDatos = _configService.LeerRutaDatos();
 
             if (string.IsNullOrWhiteSpace(_rutaDatos) || !Directory.Exists(_rutaDatos))
@@ -166,12 +183,16 @@ namespace GaCostos
 
             try
             {
-                IReadOnlyList<CuentaMayor> cuentas = _contabilidadService.ObtenerCatalogoMayor(_rutaDatos!);
+                IReadOnlyList<CuentaMayor> cuentas = _origen == OrigenDatos.Json
+                    ? _contabilidadService.ObtenerCatalogoMayorJson(_jsonActual!)
+                    : _origen == OrigenDatos.BaseDatos
+                    ? _contabilidadService.ObtenerCatalogoMayorBd()
+                    : _contabilidadService.ObtenerCatalogoMayor(_rutaDatos!);
                 _nivelActual = NivelNavegacion.CatalogoMayor;
                 ConfigurarColumnasCatalogoMayor();
                 _bindingSource.DataSource = new BindingList<CuentaMayor>(cuentas.ToList());
                 dgvPrincipal.Visible = true;
-                lblRuta.Text = _rutaDatos!;
+                lblRuta.Text = _origen == OrigenDatos.Json ? "JSON: " + _rutaJson : _origen == OrigenDatos.BaseDatos ? "Base de datos" : _rutaDatos!;
             }
             catch (Exception ex)
             {
@@ -186,7 +207,11 @@ namespace GaCostos
 
             try
             {
-                IReadOnlyList<CuentaAuxiliar> cuentas = _contabilidadService.ObtenerCatalogoAuxiliar(_rutaDatos!, rangoInferior, rangoSuperior);
+                IReadOnlyList<CuentaAuxiliar> cuentas = _origen == OrigenDatos.Json
+                    ? _contabilidadService.ObtenerCatalogoAuxiliarJson(_jsonActual!, rangoInferior)
+                    : _origen == OrigenDatos.BaseDatos
+                    ? _contabilidadService.ObtenerCatalogoAuxiliarBd(rangoInferior)
+                    : _contabilidadService.ObtenerCatalogoAuxiliar(_rutaDatos!, rangoInferior, rangoSuperior);
                 _nivelActual = NivelNavegacion.CatalogoAuxiliar;
                 _rangoInferiorActual = rangoInferior;
                 _rangoSuperiorActual = rangoSuperior;
@@ -208,7 +233,12 @@ namespace GaCostos
 
             try
             {
-                AuxiliarResultado resultado = _contabilidadService.ObtenerMovimientosAuxiliar(_rutaDatos!, guia, mesProceso: 0);
+                _guiaJsonActual = guia;
+                AuxiliarResultado resultado = _origen == OrigenDatos.Json
+                    ? _contabilidadService.ObtenerMovimientosAuxiliarJson(_jsonActual!, _rangoInferiorActual, guia)
+                    : _origen == OrigenDatos.BaseDatos
+                    ? _contabilidadService.ObtenerMovimientosAuxiliarBd(_rangoInferiorActual, guia)
+                    : _contabilidadService.ObtenerMovimientosAuxiliar(_rutaDatos!, guia, mesProceso: 0);
                 List<MovimientoAuxiliarGridRow> movimientos = resultado.Movimientos.Select(MovimientoAuxiliarGridRow.FromMovimiento).ToList();
                 _nivelActual = NivelNavegacion.Auxiliar;
                 ConfigurarColumnasMovimientosAuxiliar();
@@ -278,6 +308,47 @@ namespace GaCostos
 
             if (movimiento.Poliza <= 0)
                 return;
+
+            if (_origen == OrigenDatos.Json)
+            {
+                try
+                {
+                    if (_jsonActual is null)
+                        return;
+
+                    using FormPolizaDiario formJson = new(_contabilidadService);
+
+                    if (!formJson.CargarPolizaJson(_jsonActual, movimiento.Poliza, movimiento.Fecha))
+                        return;
+
+                    formJson.ShowDialog(this);
+                }
+                catch (Exception ex)
+                {
+                    MostrarError("Error en AbrirPolizaDiario (JSON).", ex);
+                }
+
+                return;
+            }
+
+            if (_origen == OrigenDatos.BaseDatos)
+            {
+                try
+                {
+                    using FormPolizaDiario formBd = new(_contabilidadService);
+
+                    if (!formBd.CargarPolizaBd(movimiento.Poliza))
+                        return;
+
+                    formBd.ShowDialog(this);
+                }
+                catch (Exception ex)
+                {
+                    MostrarError("Error en AbrirPolizaDiario.", ex);
+                }
+
+                return;
+            }
 
             if (!ValidarRutaDatos())
                 return;
@@ -349,6 +420,10 @@ namespace GaCostos
             {
                 _rutaDatos = dialog.SelectedPath;
 
+                _origen = OrigenDatos.Archivos;
+                if (_menuOrigenBd is not null)
+                    _menuOrigenBd.Checked = false;
+
                 _configService.GuardarRutaDatos(_rutaDatos);
 
                 _filaCatalogoMayor = 0;
@@ -369,6 +444,12 @@ namespace GaCostos
 
         private void VerificarArchivos()
         {
+            if (_origen != OrigenDatos.Archivos)
+            {
+                MessageBox.Show(this, "Está usando la base de datos; no hay archivos que verificar.", "Verificar archivos", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
             if (!ValidarRutaDatos())
                 return;
 
@@ -436,6 +517,9 @@ namespace GaCostos
 
         private bool ValidarRutaDatos(bool mostrarMensaje = true)
         {
+            if (_origen != OrigenDatos.Archivos)
+                return true;
+
             if (!string.IsNullOrWhiteSpace(_rutaDatos) && Directory.Exists(_rutaDatos))
                 return true;
 
@@ -510,6 +594,15 @@ namespace GaCostos
 
         private void DgvPrincipal_KeyDown(object? sender, KeyEventArgs e)
         {
+            if (e.KeyCode == Keys.F2 && _origen == OrigenDatos.Json)
+            {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+
+                EditarFilaJson();
+                return;
+            }
+
             if (e.KeyCode != Keys.Enter)
                 return;
 
@@ -547,6 +640,42 @@ namespace GaCostos
         private void MenuVersion_Click(object? sender, EventArgs e)
         {
             MessageBox.Show(this, "GaCostos 2026 - Migración a .NET 8", "Versión", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private enum OrigenDatos
+        {
+            Archivos = 0,
+            BaseDatos = 1,
+            Json = 2
+        }
+
+        private void MenuOrigenBd_Click(object? sender, EventArgs e)
+        {
+            try
+            {
+                bool usarBd = _menuOrigenBd is not null && _menuOrigenBd.Checked;
+
+                _origen = usarBd ? OrigenDatos.BaseDatos : OrigenDatos.Archivos;
+
+                _filaCatalogoMayor = 0;
+                _filaCatalogoAuxiliar = 0;
+                _rangoInferiorActual = 0;
+                _rangoSuperiorActual = 0;
+
+                if (usarBd)
+                {
+                    dgvPrincipal.Visible = true;
+                    CargarCatalogoMayor();
+                }
+                else
+                {
+                    CargarRutaInicial();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error en MenuOrigenBd_Click: " + ex.Message);
+            }
         }
 
         private enum NivelNavegacion

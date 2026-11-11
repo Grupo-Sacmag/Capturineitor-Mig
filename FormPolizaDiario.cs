@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -50,6 +50,54 @@ namespace GaCostos
             {
                 MessageBox.Show(this, $"No fue posible cargar la póliza." + $"{Environment.NewLine}{Environment.NewLine}" + ex.Message, "Error", MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
+                return false;
+            }
+        }
+
+        public bool CargarPolizaBd(int numeroPoliza)
+        {
+            try
+            {
+                LimpiarFormulario();
+
+                IReadOnlyList<RegistroOperacion> registros = _contabilidadService.ObtenerPolizaDiarioBd(numeroPoliza);
+
+                if (registros.Count == 0)
+                {
+                    MessageBox.Show(this, "No se encontró la póliza en la base de datos.", "Sin resultado", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return false;
+                }
+
+                PintarPoliza(registros);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "Error en CargarPolizaBd: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
+        }
+
+        public bool CargarPolizaJson(TrabajoJson json, int numeroPoliza, string? fechaMovimiento = null)
+        {
+            try
+            {
+                LimpiarFormulario();
+
+                IReadOnlyList<RegistroOperacion> registros = _contabilidadService.ObtenerPolizaDiarioJson(json, numeroPoliza, fechaMovimiento);
+
+                if (registros.Count == 0)
+                {
+                    MessageBox.Show(this, "La póliza no se encontró en el JSON (o proviene de movimientos heredados sin detalle de póliza).", "Sin resultado", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return false;
+                }
+
+                PintarPoliza(registros);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "Error en CargarPolizaJson: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;
             }
         }

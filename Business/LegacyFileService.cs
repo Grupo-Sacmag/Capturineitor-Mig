@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using CapturaDePolizas_2026_NET8.Business;
 using GaCostos.Models;
 
@@ -240,9 +240,87 @@ public sealed class LegacyFileService
         if (indiceInicio < 0)
             return [];
 
-        return ExtraerBloquePoliza(
+        IReadOnlyList<RegistroOperacion> bloque = ExtraerBloquePoliza(
             operaciones,
             indiceInicio);
+
+        return EnriquecerBloquePoliza(rutaDatos, bloque);
+    }
+
+    private IReadOnlyList<RegistroOperacion> EnriquecerBloquePoliza(string rutaDatos, IReadOnlyList<RegistroOperacion> bloque)
+    {
+        try
+        {
+            Dictionary<int, CuentaMayor> cuentasMayorPorId = [];
+            IReadOnlyList<CuentaMayor> listaMayor = LeerCatalogoMayor(rutaDatos);
+            foreach (CuentaMayor c in listaMayor)
+            {
+                if (int.TryParse(c.Cuenta.Trim(), out int cId))
+                    cuentasMayorPorId[cId] = c;
+            }
+
+            string catauxPath = Path.Combine(rutaDatos, "cataux");
+            using FileStream? fsAux = File.Exists(catauxPath)
+                ? new FileStream(catauxPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)
+                : null;
+
+            List<RegistroOperacion> resultado = new(bloque.Count);
+
+            foreach (RegistroOperacion op in bloque)
+            {
+                if (op.Identificador == "B")
+                {
+                    string nombreCuenta = op.Descripcion;
+                    if (int.TryParse(op.Real.Trim(), out int posMay) && posMay >= 1 && posMay <= listaMayor.Count)
+                    {
+                        nombreCuenta = listaMayor[posMay - 1].Nombre;
+                    }
+                    else if (int.TryParse(op.Cuenta.Trim(), out int ctaId) && cuentasMayorPorId.TryGetValue(ctaId, out CuentaMayor? cm))
+                    {
+                        nombreCuenta = cm.Nombre;
+                    }
+
+                    resultado.Add(op with { Descripcion = nombreCuenta });
+                }
+                else if (op.Identificador == "C")
+                {
+                    string numSubcuenta = !string.IsNullOrWhiteSpace(op.Real) ? op.Real.Trim() : op.Cuenta.Trim();
+                    string nombreSubcuenta = op.Descripcion;
+
+                    if (fsAux is not null && int.TryParse(op.Cuenta.Trim(), out int guiaAux) && guiaAux >= 1)
+                    {
+                        long offset = (long)(guiaAux - 1) * LongitudRegistroCatalogo;
+                        if (offset + LongitudRegistroCatalogo <= fsAux.Length)
+                        {
+                            fsAux.Seek(offset, SeekOrigin.Begin);
+                            byte[] buf = new byte[LongitudRegistroCatalogo];
+                            if (fsAux.Read(buf, 0, LongitudRegistroCatalogo) == LongitudRegistroCatalogo)
+                            {
+                                string regAux = _encoding.GetString(buf);
+                                string c1 = ObtenerTexto(regAux, 0, 6);
+                                string c2 = ObtenerTexto(regAux, 6, 32);
+                                if (!string.IsNullOrWhiteSpace(c1))
+                                    numSubcuenta = c1;
+                                if (string.IsNullOrWhiteSpace(nombreSubcuenta) && !string.IsNullOrWhiteSpace(c2))
+                                    nombreSubcuenta = c2;
+                            }
+                        }
+                    }
+
+                    resultado.Add(op with { Cuenta = numSubcuenta, Descripcion = nombreSubcuenta });
+                }
+                else
+                {
+                    resultado.Add(op);
+                }
+            }
+
+            return resultado;
+        }
+        catch
+        {
+            return bloque;
+        }
     }
 
     private List<RegistroOperacion> LeerOperaciones(string filePath)
@@ -275,7 +353,7 @@ public sealed class LegacyFileService
         {
             RegistroOperacion operacion = operaciones[i];
 
-            if (operacion.Identificador == "C" && int.TryParse(operacion.Real, out int real) && real == numeroPoliza)
+            if (operacion.Identificador == "A" && int.TryParse(operacion.Cuenta, out int cuenta) && cuenta == numeroPoliza)
             {
                 return i;
             }
@@ -285,7 +363,7 @@ public sealed class LegacyFileService
         {
             RegistroOperacion operacion = operaciones[i];
 
-            if (operacion.Identificador == "A" && int.TryParse(operacion.Cuenta, out int cuenta) && cuenta == numeroPoliza)
+            if (operacion.Identificador == "C" && int.TryParse(operacion.Real, out int real) && real == numeroPoliza)
             {
                 return i;
             }

@@ -1,4 +1,4 @@
-﻿namespace CapturaDePolizas_2026_NET8
+namespace CapturaDePolizas_2026_NET8
 {
     partial class FormCaptura
     {
@@ -35,6 +35,9 @@
             mnuCaptura = new ToolStripMenuItem();
             mnuCapturaPoliza = new ToolStripMenuItem();
             mnuCapturaCheque = new ToolStripMenuItem();
+            mnuSeparadorCheque = new ToolStripSeparator();
+            mnuImprimirCheque = new ToolStripMenuItem();
+            mnuAjustarCheque = new ToolStripMenuItem();
             mnuVer = new ToolStripMenuItem();
             mnuVerCuentas = new ToolStripMenuItem();
             mnuVerSubcuentas = new ToolStripMenuItem();
@@ -126,7 +129,7 @@
             // 
             // mnuCaptura
             // 
-            mnuCaptura.DropDownItems.AddRange(new ToolStripItem[] { mnuCapturaPoliza, mnuCapturaCheque });
+            mnuCaptura.DropDownItems.AddRange(new ToolStripItem[] { mnuCapturaPoliza, mnuCapturaCheque, mnuSeparadorCheque, mnuImprimirCheque, mnuAjustarCheque });
             mnuCaptura.Name = "mnuCaptura";
             mnuCaptura.Size = new Size(61, 20);
             mnuCaptura.Text = "Captura";
@@ -144,6 +147,24 @@
             mnuCapturaCheque.Size = new Size(180, 22);
             mnuCapturaCheque.Text = "Cheque";
             mnuCapturaCheque.Click += MnuCapturaCheque_Click;
+            // 
+            // mnuSeparadorCheque
+            // 
+            mnuSeparadorCheque.Name = "mnuSeparadorCheque";
+            mnuSeparadorCheque.Size = new Size(177, 6);
+            // 
+            // mnuImprimirCheque
+            // 
+            mnuImprimirCheque.Name = "mnuImprimirCheque";
+            mnuImprimirCheque.Size = new Size(180, 22);
+            mnuImprimirCheque.Text = "Imprimir Cheque";
+            mnuImprimirCheque.Enabled = false;
+            // 
+            // mnuAjustarCheque
+            // 
+            mnuAjustarCheque.Name = "mnuAjustarCheque";
+            mnuAjustarCheque.Size = new Size(180, 22);
+            mnuAjustarCheque.Text = "Ajustar Cheque";
             // 
             // mnuVer
             // 
@@ -541,5 +562,8 @@
         private System.Windows.Forms.Button btnSiguiente;
         private System.Windows.Forms.CheckBox chkVarios;
         private ToolStripMenuItem tsAuxiliares;
+        private System.Windows.Forms.ToolStripSeparator mnuSeparadorCheque;
+        private System.Windows.Forms.ToolStripMenuItem mnuImprimirCheque;
+        private System.Windows.Forms.ToolStripMenuItem mnuAjustarCheque;
     }
 }

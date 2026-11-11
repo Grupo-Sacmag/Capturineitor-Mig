@@ -14,8 +14,13 @@ namespace CapturaDePolizas_2026_NET8.Repositories
 {
     public class CatalogoRepository : ICatalogoRepository
     {
+        private readonly JsonCatalogoRepository _jsonRepo = new();
+
         public bool ValidarCuenta(string cuentaId, out string nombreCuenta)
         {
+            if (GaCostos.Models.SesionTrabajoJson.UsarJson)
+                return _jsonRepo.ValidarCuenta(cuentaId, out nombreCuenta);
+
             nombreCuenta = string.Empty;
 
             if (!int.TryParse(cuentaId, out int id))
@@ -34,6 +39,9 @@ namespace CapturaDePolizas_2026_NET8.Repositories
 
         public bool ValidarSubcuenta(string subcuentaId, string cuentaPadreId, out string nombreSubcuenta)
         {
+            if (GaCostos.Models.SesionTrabajoJson.UsarJson)
+                return _jsonRepo.ValidarSubcuenta(subcuentaId, cuentaPadreId, out nombreSubcuenta);
+
             nombreSubcuenta = string.Empty;
 
             if (!int.TryParse(subcuentaId, out int subId))
@@ -55,6 +63,9 @@ namespace CapturaDePolizas_2026_NET8.Repositories
 
         public int ObtenerSiguienteFolio()
         {
+            if (GaCostos.Models.SesionTrabajoJson.UsarJson)
+                return _jsonRepo.ObtenerSiguienteFolio();
+
             using var db = new EmpresaDbContext();
 
             int maxFolio = db.Polizas.Select(p => (int?)p.Folio).Max() ?? 0;
@@ -64,6 +75,9 @@ namespace CapturaDePolizas_2026_NET8.Repositories
 
         public string ObtenerSiguienteNumeroCheque()
         {
+            if (GaCostos.Models.SesionTrabajoJson.UsarJson)
+                return _jsonRepo.ObtenerSiguienteNumeroCheque();
+
             using var db = new EmpresaDbContext();
 
             var numerosCheque = db.Polizas.AsNoTracking().Where(p => p.TipoCaptura == 0 && p.NumeroCheque != null && p.NumeroCheque != string.Empty)
@@ -84,6 +98,9 @@ namespace CapturaDePolizas_2026_NET8.Repositories
 
         public bool GuardarPoliza(PolizaModel model)
         {
+            if (GaCostos.Models.SesionTrabajoJson.UsarJson)
+                return _jsonRepo.GuardarPoliza(model);
+
             ArgumentNullException.ThrowIfNull(model);
 
             using var db = new EmpresaDbContext();
@@ -116,6 +133,9 @@ namespace CapturaDePolizas_2026_NET8.Repositories
 
         public DataTable ObtenerTablaCuentas()
         {
+            if (GaCostos.Models.SesionTrabajoJson.UsarJson)
+                return _jsonRepo.ObtenerTablaCuentas();
+
             DataTable tabla = CrearTablaCuentas();
 
             using var db = new EmpresaDbContext();
@@ -137,6 +157,9 @@ namespace CapturaDePolizas_2026_NET8.Repositories
 
         public DataTable ObtenerTablaSubcuentas()
         {
+            if (GaCostos.Models.SesionTrabajoJson.UsarJson)
+                return _jsonRepo.ObtenerTablaSubcuentas();
+
             DataTable tabla = CrearTablaSubcuentas();
 
             using var db = new EmpresaDbContext();
@@ -181,6 +204,9 @@ namespace CapturaDePolizas_2026_NET8.Repositories
 
         public DataTable ObtenerCuentasBusqueda()
         {
+            if (GaCostos.Models.SesionTrabajoJson.UsarJson)
+                return _jsonRepo.ObtenerCuentasBusqueda();
+
             DataTable tabla = CrearTablaBusqueda();
 
             using var db = new EmpresaDbContext();
@@ -201,6 +227,9 @@ namespace CapturaDePolizas_2026_NET8.Repositories
 
         public DataTable ObtenerSubcuentasBusqueda(int cuentaId)
         {
+            if (GaCostos.Models.SesionTrabajoJson.UsarJson)
+                return _jsonRepo.ObtenerSubcuentasBusqueda(cuentaId);
+
             DataTable tabla = CrearTablaBusqueda();
 
             using var db = new EmpresaDbContext();
@@ -221,6 +250,9 @@ namespace CapturaDePolizas_2026_NET8.Repositories
 
         public DataTable ObtenerTablaPolizas()
         {
+            if (GaCostos.Models.SesionTrabajoJson.UsarJson)
+                return _jsonRepo.ObtenerTablaPolizas();
+
             DataTable tabla = CrearTablaPolizas();
 
             using var db = new EmpresaDbContext();
@@ -253,6 +285,9 @@ namespace CapturaDePolizas_2026_NET8.Repositories
 
         public DataTable ObtenerTablaPolizasPorSubcuenta(int cuentaId, int subcuentaId)
         {
+            if (GaCostos.Models.SesionTrabajoJson.UsarJson)
+                return _jsonRepo.ObtenerTablaPolizasPorSubcuenta(cuentaId, subcuentaId);
+
             DataTable tabla = CrearTablaPolizas();
 
             using var db = new EmpresaDbContext();
@@ -295,6 +330,9 @@ namespace CapturaDePolizas_2026_NET8.Repositories
 
         public DataTable ObtenerMovimientosPoliza(int polizaId)
         {
+            if (GaCostos.Models.SesionTrabajoJson.UsarJson)
+                return _jsonRepo.ObtenerMovimientosPoliza(polizaId);
+
             DataTable tabla = CrearTablaMovimientosPoliza();
 
             using var db = new EmpresaDbContext();
@@ -366,6 +404,9 @@ namespace CapturaDePolizas_2026_NET8.Repositories
 
         public DataTable ObtenerEstadosFinancieros(bool incluirCuentasOrden)
         {
+            if (GaCostos.Models.SesionTrabajoJson.UsarJson)
+                return _jsonRepo.ObtenerEstadosFinancieros(incluirCuentasOrden);
+
             DataTable tabla = new();
             tabla.Columns.Add("Activo", typeof(string));
             tabla.Columns.Add("Monto Activo", typeof(string));

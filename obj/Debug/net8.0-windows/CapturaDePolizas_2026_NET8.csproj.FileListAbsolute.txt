@@ -776,3 +776,7 @@ C:\Users\david.albino\source\repos\Capturineitor-Mig\obj\Debug\net8.0-windows\re
 C:\Users\david.albino\source\repos\Capturineitor-Mig\obj\Debug\net8.0-windows\CapturaDePolizas_2026_NET8.pdb
 C:\Users\david.albino\source\repos\Capturineitor-Mig\obj\Debug\net8.0-windows\CapturaDePolizas_2026_NET8.genruntimeconfig.cache
 C:\Users\david.albino\source\repos\Capturineitor-Mig\obj\Debug\net8.0-windows\ref\CapturaDePolizas_2026_NET8.dll
+C:\Users\david.albino\.gemini\antigravity\brain\4e61e53a-4030-416e-96b0-2d3ae1f98173\scratch\out\CapturaDePolizas_2026_NET8.deps.json
+C:\Users\david.albino\.gemini\antigravity\brain\4e61e53a-4030-416e-96b0-2d3ae1f98173\scratch\out\CapturaDePolizas_2026_NET8.runtimeconfig.json
+C:\Users\david.albino\.gemini\antigravity\brain\4e61e53a-4030-416e-96b0-2d3ae1f98173\scratch\out\CapturaDePolizas_2026_NET8.dll
+C:\Users\david.albino\.gemini\antigravity\brain\4e61e53a-4030-416e-96b0-2d3ae1f98173\scratch\out\CapturaDePolizas_2026_NET8.pdb

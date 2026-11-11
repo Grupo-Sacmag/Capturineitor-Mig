@@ -1,3 +1,4 @@
+using CapturaDePolizas_2026_NET8.Business;
 using CapturaDePolizas_2026_NET8.Models;
 using CapturaDePolizas_2026_NET8.Repositories;
 using GaCostos;
@@ -23,6 +24,7 @@ public partial class FormCaptura : Form
     private readonly Stack<string[,]> _redoStack = new();
 
     private string[,]? _lastState;
+    private bool _chequeImpreso;
     private bool _isUndoing;
 
     public FormCaptura()
@@ -96,14 +98,19 @@ public partial class FormCaptura : Form
 
         chkVarios.CheckedChanged += ChkVarios_CheckedChanged;
 
+        mnuCaptura.DropDownOpening += (_, _) => ActualizarEstadoBotonGuardar();
         mnuCapturaPoliza.Click += MnuCapturaPoliza_Click;
         mnuCapturaCheque.Click += MnuCapturaCheque_Click;
+        mnuImprimirCheque.Click += MnuImprimirCheque_Click;
+        mnuAjustarCheque.Click += MnuAjustarCheque_Click;
+        btnImprimir.Click += BtnImprimir_Click;
 
         mnuVerCuentas.Click += MnuVerCuentas_Click;
         mnuVerSubcuentas.Click += MnuVerSubcuentas_Click;
         mnuVerPolizas.Click += MnuVerPolizas_Click;
         mnuVerCheques.Click += MnuVerCheques_Click;
         mnuVerEstadosFinancieros.Click += MnuVerEstadosFinancieros_Click;
+        InicializarMenuOrigenDatos();
     }
 
     private void FormCaptura_Load(object? sender, EventArgs e)
@@ -248,6 +255,7 @@ public partial class FormCaptura : Form
         dgvMovimientos.Columns.Add("Haber", "Haber");
         dgvMovimientos.Columns.Add("Redaccion", "Redacción");
         dgvMovimientos.Columns.Add("FolioFiscal", "Folio fiscal");
+        dgvMovimientos.Columns.Add("Proyecto", "No. Proyecto");
 
         dgvMovimientos.Columns["Nombre"].ReadOnly = true;
         dgvMovimientos.Columns["Debe"].ReadOnly = true;
@@ -269,6 +277,7 @@ public partial class FormCaptura : Form
         ConfigurarColumnaGrid("Haber", 120, DataGridViewContentAlignment.MiddleRight);
         ConfigurarColumnaGrid("Redaccion", 180, DataGridViewContentAlignment.MiddleLeft);
         ConfigurarColumnaGrid("FolioFiscal", 150, DataGridViewContentAlignment.MiddleLeft);
+        ConfigurarColumnaGrid("Proyecto", 110, DataGridViewContentAlignment.MiddleLeft);
 
         dgvMovimientos.Columns["Nombre"].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
         dgvMovimientos.Columns["Nombre"].MinimumWidth = 180;
@@ -322,6 +331,7 @@ public partial class FormCaptura : Form
         txtFolios.Clear();
 
         chkVarios.Checked = false;
+        _chequeImpreso = false;
 
         _undoStack.Clear();
         _redoStack.Clear();
@@ -362,6 +372,134 @@ public partial class FormCaptura : Form
     private void MnuCapturaCheque_Click(object? sender, EventArgs e)
     {
         IntentarCambiarPantalla(TipoCaptura.Cheque);
+    }
+
+    private void MnuImprimirCheque_Click(object? sender, EventArgs e)
+    {
+        ImprimirChequeActual();
+    }
+
+    private void MnuAjustarCheque_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            using FormAjustarCheque form = new();
+            form.ShowDialog(this);
+        }
+        catch (Exception ex)
+        {
+            MostrarError("Error al abrir ajustes de cheque", ex);
+        }
+    }
+
+    private void BtnImprimir_Click(object? sender, EventArgs e)
+    {
+        ImprimirChequeActual();
+    }
+
+    private void ImprimirChequeActual()
+    {
+        if (ObtenerTipoCapturaActual() != TipoCaptura.Cheque)
+        {
+            MessageBox.Show(
+                "Debe estar en la pantalla de captura de Cheque para imprimir.",
+                "Impresión de Cheques",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning
+            );
+            return;
+        }
+
+        CalcularTotales(out decimal totalDebe, out decimal totalHaber, out bool tieneMovimientos);
+
+        if (!tieneMovimientos || totalDebe != totalHaber || totalDebe <= 0)
+        {
+            MessageBox.Show(
+                "No se puede imprimir el cheque: las sumas del Debe y el Haber deben ser correctas y mayores a cero.",
+                "Captura de Cheques",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning
+            );
+            return;
+        }
+
+        string beneficiario = txtBeneficiario.Text.Trim().ToUpper();
+        if (string.IsNullOrWhiteSpace(beneficiario))
+        {
+            MessageBox.Show(
+                "No existe beneficiario.",
+                "Captura de Cheques",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error
+            );
+            txtBeneficiario.Focus();
+            return;
+        }
+
+        string numeroCheque = txtNumeroCheque.Text.Trim().ToUpper();
+        if (string.IsNullOrWhiteSpace(numeroCheque) || numeroCheque == "0")
+        {
+            MessageBox.Show(
+                "Debe indicar un número de cheque válido.",
+                "Captura de Cheques",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error
+            );
+            txtNumeroCheque.Focus();
+            return;
+        }
+
+        decimal montoCheque = ObtenerMontoCheque();
+        if (montoCheque <= 0)
+        {
+            montoCheque = totalDebe;
+        }
+
+        try
+        {
+            ChequePrintSettings settings = ChequePrintSettings.Cargar();
+            ChequeTemplateConfig plantilla = settings.ObtenerPlantillaActiva();
+
+            var datos = new ChequePrintData
+            {
+                FechaTexto = DateTime.Today.ToString("dd 'de' MMMM 'de' yyyy", new CultureInfo("es-MX")).ToUpper(),
+                Beneficiario = beneficiario,
+                ImporteNumeroTexto = FormatHelper.FormatearImporte(montoCheque),
+                ImporteLetraTexto = NumeroALetrasHelper.ConvertirAMonedaLetra(montoCheque),
+                ConceptoTexto = txtConceptoCheque.Text.Trim().ToUpper(),
+                NumeroCheque = numeroCheque,
+                SumaDebeTexto = FormatHelper.FormatearImporte(totalDebe),
+                SumaHaberTexto = FormatHelper.FormatearImporte(totalHaber)
+            };
+
+            foreach (DataGridViewRow row in dgvMovimientos.Rows)
+            {
+                string cuenta = ObtenerTextoCelda(row, "Cuenta").Trim();
+                string subcuenta = ObtenerTextoCelda(row, "SubCta").Trim();
+
+                if (string.IsNullOrWhiteSpace(cuenta) && string.IsNullOrWhiteSpace(subcuenta))
+                    continue;
+
+                datos.Renglones.Add(new ChequeRenglonImpresion
+                {
+                    Cuenta = cuenta,
+                    Subcuenta = subcuenta,
+                    Nombre = ObtenerTextoCelda(row, "Nombre").Trim(),
+                    Parcial = ObtenerTextoCelda(row, "Parcial").Trim(),
+                    Debe = ObtenerTextoCelda(row, "Debe").Trim(),
+                    Haber = ObtenerTextoCelda(row, "Haber").Trim()
+                });
+            }
+
+            if (ChequePrintService.ImprimirConDialogo(this, datos, plantilla))
+            {
+                _chequeImpreso = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            MostrarError("Error al intentar imprimir el cheque", ex);
+        }
     }
 
     private void MnuVerCuentas_Click(object? sender, EventArgs e)
@@ -590,6 +728,12 @@ public partial class FormCaptura : Form
         if (_activeCell is null)
             return;
 
+        if (dgvMovimientos.CurrentCell is not null && dgvMovimientos.CurrentCell.ColumnIndex == 8)
+        {
+            _activeCell = dgvMovimientos.CurrentCell;
+            return;
+        }
+
         if (dgvMovimientos.CurrentCell == _activeCell)
             return;
 
@@ -688,6 +832,10 @@ public partial class FormCaptura : Form
 
             case 7:
                 ProcesarCeldaFolioFiscal(row);
+                break;
+
+            case 8:
+                ProcesarCeldaProyecto(row);
                 break;
         }
     }
@@ -863,7 +1011,16 @@ public partial class FormCaptura : Form
             AgregarFilaGrid();
         }
 
-        if (dgvMovimientos.Columns["FolioFiscal"].Visible)
+        if (dgvMovimientos.Columns["FolioFiscal"].Visible && chkVarios.Checked)
+        {
+            ReenfocarCelda(row, 7);
+            return;
+        }
+
+        ReenfocarCelda(row, 8);
+        return;
+
+        if (false)
         {
             ReenfocarCelda(row, 7);
         }
@@ -873,7 +1030,22 @@ public partial class FormCaptura : Form
         }
     }
 
+    private void ProcesarCeldaProyecto(int row)
+    {
+        if (row == dgvMovimientos.Rows.Count - 1)
+        {
+            AgregarFilaGrid();
+        }
+
+        ReenfocarCelda(row + 1, 1);
+    }
+
     private void ProcesarCeldaFolioFiscal(int row)
+    {
+        ReenfocarCelda(row, 8);
+    }
+
+    private void ProcesarCeldaFolioFiscalAnterior(int row)
     {
         if (row == dgvMovimientos.Rows.Count - 1)
         {
@@ -1141,6 +1313,17 @@ public partial class FormCaptura : Form
         if (!ValidarCapturaAntesDeGuardar(totalDebe, totalHaber, tieneMovimientos))
             return false;
 
+        if (tipo == TipoCaptura.Cheque && !_chequeImpreso)
+        {
+            MessageBox.Show(
+                "El cheque no se ha impreso.",
+                "Captura de Cheques",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning
+            );
+            return false;
+        }
+
         PolizaModel model = CrearPolizaModel(tipo, folio, totalDebe, totalHaber);
 
         AgregarMovimientosAlModelo(model, tipo);
@@ -1151,8 +1334,13 @@ public partial class FormCaptura : Form
 
             if (guardado)
             {
+                GuardarProyectosDeGridEnJson(model.Fecha.Month, folio);
+            }
+
+            if (guardado)
+            {
                 MessageBox.Show(
-                    "Captura guardada exitosamente en la base de datos.",
+                    "Captura guardada exitosamente en " + (GaCostos.Models.SesionTrabajoJson.UsarJson ? "el archivo JSON." : "la base de datos."),
                     "Éxito",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information
@@ -1166,6 +1354,31 @@ public partial class FormCaptura : Form
             MostrarError("Error al guardar la póliza y sus movimientos", ex);
             return false;
         }
+    }
+
+    private void GuardarProyectosDeGridEnJson(int mes, int numeroPoliza)
+    {
+        if (!dgvMovimientos.Columns.Contains("Proyecto"))
+            return;
+
+        var proyectos = new List<string>();
+
+        foreach (DataGridViewRow row in dgvMovimientos.Rows)
+        {
+            string cuenta = ObtenerTextoCelda(row, "Cuenta").Trim();
+            string subcuenta = ObtenerTextoCelda(row, "SubCta").Trim();
+
+            if (string.IsNullOrWhiteSpace(cuenta) && string.IsNullOrWhiteSpace(subcuenta))
+                continue;
+
+            string proyecto = ObtenerTextoCelda(row, "Proyecto").Trim();
+            if (!string.IsNullOrWhiteSpace(proyecto))
+            {
+                proyectos.Add(proyecto);
+            }
+        }
+
+        ProyectoJsonService.GuardarProyectos(mes, numeroPoliza, proyectos);
     }
 
     private bool ValidarFolio(out int folio)
@@ -1375,6 +1588,18 @@ public partial class FormCaptura : Form
         if (btnGuardar is not null)
         {
             btnGuardar.Enabled = tieneMovimientos && balanceCorrecto;
+        }
+
+        bool puedeImprimirCheque = ObtenerTipoCapturaActual() == TipoCaptura.Cheque && tieneMovimientos && balanceCorrecto;
+
+        if (btnImprimir is not null)
+        {
+            btnImprimir.Enabled = puedeImprimirCheque;
+        }
+
+        if (mnuImprimirCheque is not null)
+        {
+            mnuImprimirCheque.Enabled = puedeImprimirCheque;
         }
 
         if (btnEstadoSumas is not null)
@@ -1822,6 +2047,7 @@ public partial class FormCaptura : Form
             // Se muestra la misma instancia de FormCaptura.
             Show();
             Activate();
+            ActualizarIndicadorOrigenCaptura();
         }
     }
 }

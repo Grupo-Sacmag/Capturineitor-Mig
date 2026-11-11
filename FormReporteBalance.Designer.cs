@@ -25,7 +25,7 @@ namespace CapturaDePolizas_2026_NET8
         private void InitializeComponent()
         {
             DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
-            pnlTop = new Panel();
+            pnlTop = new Panel(); 
             lblTitulo = new Label();
             lblEmpresa = new Label();
             pnlGridContainer = new Panel();
