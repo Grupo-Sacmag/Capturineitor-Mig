@@ -147,7 +147,7 @@ namespace GaCostos
                 _carpetaJsonService.GuardarJson(_jsonActual, _rutaJson);
                 _jsonModificado = false;
 
-                MessageBox.Show(this, "JSON guardado en:" + Environment.NewLine + _rutaJson, "Guardar JSON", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, "JSON guardado correctamente.", "Guardar JSON", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
@@ -180,7 +180,7 @@ namespace GaCostos
 
                 try
                 {
-                    resultado = _carpetaJsonService.GuardarEnBd(_jsonActual);
+                    resultado = _carpetaJsonService.GuardarEnBd(_jsonActual, _rutaJson);
                 }
                 finally
                 {
@@ -196,9 +196,13 @@ namespace GaCostos
                     $"Omitidas (código no numérico): {resultado.Omitidas}",
                     "Guardado en base de datos", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
+
             catch (Exception ex)
             {
-                MostrarError("Error en MenuGuardarJsonEnBd_Click.", ex);
+                System.Diagnostics.Trace.WriteLine(ex);
+
+                MessageBox.Show(this, "No se pudo completar la importación a SQL Server. Comprueba que el JSON esté guardado localmente y que todas sus pólizas estén correctamente cuadradas. No se ha confirmado la importación.",
+                    "Guardar en Base de Datos", MessageBoxButtons.OK,MessageBoxIcon.Warning);
             }
         }
 

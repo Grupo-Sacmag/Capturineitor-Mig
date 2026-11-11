@@ -111,6 +111,7 @@ public partial class FormCaptura : Form
         mnuVerCheques.Click += MnuVerCheques_Click;
         mnuVerEstadosFinancieros.Click += MnuVerEstadosFinancieros_Click;
         InicializarMenuOrigenDatos();
+        InicializarSesionesLocales();
     }
 
     private void FormCaptura_Load(object? sender, EventArgs e)
@@ -318,6 +319,8 @@ public partial class FormCaptura : Form
 
     private void RefrescarCaptura()
     {
+        LimpiarVinculoSesion();
+
         _activeCell = null;
 
         CrearFilasIniciales();
@@ -494,6 +497,7 @@ public partial class FormCaptura : Form
             if (ChequePrintService.ImprimirConDialogo(this, datos, plantilla))
             {
                 _chequeImpreso = true;
+                ActualizarEstadoBotonGuardar();
             }
         }
         catch (Exception ex)
@@ -1303,8 +1307,12 @@ public partial class FormCaptura : Form
         }
     }
 
+
     private bool GuardarCaptura(TipoCaptura tipo)
     {
+        if (!TerminarEdicionGrid())
+            return false;
+
         if (!ValidarFolio(out int folio))
             return false;
 
@@ -1315,12 +1323,7 @@ public partial class FormCaptura : Form
 
         if (tipo == TipoCaptura.Cheque && !_chequeImpreso)
         {
-            MessageBox.Show(
-                "El cheque no se ha impreso.",
-                "Captura de Cheques",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Warning
-            );
+            MessageBox.Show("El cheque no se ha impreso.", "Captura de Cheques", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return false;
         }
 
@@ -1328,33 +1331,84 @@ public partial class FormCaptura : Form
 
         AgregarMovimientosAlModelo(model, tipo);
 
+        // Solo permite contabilizar un borrador local guardado que coincida exactamente con la captura actual.
+        if (!ValidarSesionAntesDeContabilizar(model, out SesionLocal? sesionParaContabilizar))
+        {
+            return false;
+        }
+
+
+        if (sesionParaContabilizar is not null)
+        {
+            DialogResult confirmar = MessageBox.Show(this, $"¿Deseas contabilizar definitivamente la sesión '{sesionParaContabilizar.Nombre}' en SQL Server?\n\n" +
+                $"Folio: {model.Folio}\n" + $"Debe: {model.TotalDebe:N2}\n" + $"Haber: {model.TotalHaber:N2}\n" + $"Diferencia: {(model.TotalDebe - model.TotalHaber):N2}",
+                "Confirmar contabilización", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2);
+
+            if (confirmar != DialogResult.Yes)
+                return false;
+        }
+
+
+        bool confirmadoEnSql = false;
+        bool sesionContabilizada = false;
+
         try
         {
+            // Se registra el estado antes de iniciar la transacción SQL.
+            MarcarSesionEnProceso(sesionParaContabilizar);
+
+            // Se conserva el repositorio y su transacción existentes.
             bool guardado = _catalogoRepository.GuardarPoliza(model);
 
-            if (guardado)
-            {
-                GuardarProyectosDeGridEnJson(model.Fecha.Month, folio);
-            }
+            confirmadoEnSql = guardado && !GaCostos.Models.SesionTrabajoJson.UsarJson;
 
-            if (guardado)
-            {
-                MessageBox.Show(
-                    "Captura guardada exitosamente en " + (GaCostos.Models.SesionTrabajoJson.UsarJson ? "el archivo JSON." : "la base de datos."),
-                    "Éxito",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information
-                );
-            }
+            if (!guardado)
+                return false;
 
-            return guardado;
+            // Primero confirmar el estado local.
+            MarcarSesionContabilizada(sesionParaContabilizar);
+            sesionContabilizada = true;
+
+            // Se conserva la funcionalidad de proyectos.
+            GuardarProyectosDeGridEnJson(model.Fecha.Month, folio);
+
+            MessageBox.Show("Captura guardada exitosamente en " + (GaCostos.Models.SesionTrabajoJson.UsarJson ? "el archivo JSON." : "la base de datos."), "Éxito",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+            return true;
         }
         catch (Exception ex)
         {
-            MostrarError("Error al guardar la póliza y sus movimientos", ex);
+            if (sesionParaContabilizar is not null)
+            {
+                string mensaje;
+
+                if (sesionContabilizada)
+                {
+                    mensaje = "La póliza ya fue contabilizada en SQL Server y su sesión local fue actualizada. Sin embargo, no fue posible completar una operación complementaria.";
+                }
+                else if (confirmadoEnSql)
+                {
+                    mensaje = "La póliza se registró en SQL Server, pero quedó pendiente la actualización de su sesión local. Utiliza 'Revisar contabilización pendiente' antes de continuar.";
+                }
+                else
+                {
+                    mensaje = "No se pudo confirmar la contabilización. La sesión se mantiene protegida. Revisa su estado antes de intentar guardarla nuevamente.";
+                }
+
+                MessageBox.Show(this, mensaje, "Guardar en Base de Datos", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+
+                _ = RecargarListaSesionesSinInterrumpirAsync();
+            }
+            else
+            {
+                MostrarError("Error al guardar la póliza y sus movimientos", ex);
+            }
+
             return false;
         }
     }
+
 
     private void GuardarProyectosDeGridEnJson(int mes, int numeroPoliza)
     {
@@ -1386,41 +1440,24 @@ public partial class FormCaptura : Form
         if (int.TryParse(txtPolizaNo.Text, out folio))
             return true;
 
-        MessageBox.Show(
-            "Número de póliza inválido.",
-            "Error de Validación",
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Error
-        );
+        MessageBox.Show("Número de póliza inválido.", "Error de Validación", MessageBoxButtons.OK, MessageBoxIcon.Error);
 
         return false;
     }
 
-    private bool ValidarCapturaAntesDeGuardar(
-        decimal totalDebe,
-        decimal totalHaber,
-        bool tieneMovimientos)
+    private bool ValidarCapturaAntesDeGuardar(decimal totalDebe, decimal totalHaber, bool tieneMovimientos)
     {
         if (!tieneMovimientos)
         {
-            MessageBox.Show(
-                "No se puede guardar una póliza/cheque sin movimientos.",
-                "Error de Validación",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Warning
-            );
+            MessageBox.Show("No se puede guardar una póliza/cheque sin movimientos.", "Error de Validación", MessageBoxButtons.OK, MessageBoxIcon.Warning);
 
             return false;
         }
 
         if (totalDebe != totalHaber || totalDebe <= 0)
         {
-            MessageBox.Show(
-                "No se puede guardar la póliza/cheque: las sumas del Debe y el Haber deben estar balanceadas y ser mayores a cero.",
-                "Error de Balance",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Warning
-            );
+            MessageBox.Show("No se puede guardar la póliza/cheque: las sumas del Debe y el Haber deben estar balanceadas y ser mayores a cero.", "Error de Balance",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
 
             return false;
         }
@@ -1428,11 +1465,7 @@ public partial class FormCaptura : Form
         return true;
     }
 
-    private PolizaModel CrearPolizaModel(
-        TipoCaptura tipo,
-        int folio,
-        decimal totalDebe,
-        decimal totalHaber)
+    private PolizaModel CrearPolizaModel(TipoCaptura tipo, int folio, decimal totalDebe, decimal totalHaber)
     {
         var model = new PolizaModel
         {
@@ -1495,10 +1528,7 @@ public partial class FormCaptura : Form
         }
     }
 
-    private MovimientoModel CrearMovimientoCuentaDirecta(
-        DataGridViewRow row,
-        int cuentaId,
-        TipoCaptura tipo)
+    private MovimientoModel CrearMovimientoCuentaDirecta(DataGridViewRow row, int cuentaId, TipoCaptura tipo)
     {
         decimal debe = ObtenerDecimalCelda(row, "Debe");
         decimal haber = ObtenerDecimalCelda(row, "Haber");
@@ -1521,17 +1551,11 @@ public partial class FormCaptura : Form
         return movimiento;
     }
 
-    private MovimientoModel CrearMovimientoSubcuenta(
-        DataGridViewRow row,
-        int cuentaId,
-        int subcuentaId,
-        TipoCaptura tipo)
+    private MovimientoModel CrearMovimientoSubcuenta(DataGridViewRow row, int cuentaId, int subcuentaId, TipoCaptura tipo)
     {
         decimal parcial = ObtenerDecimalCelda(row, "Parcial");
-
         decimal debe = parcial > 0 ? parcial : 0m;
         decimal haber = parcial < 0 ? Math.Abs(parcial) : 0m;
-
         string redaccion = ObtenerTextoCelda(row, "Redaccion");
 
         var movimiento = new MovimientoModel
@@ -1585,10 +1609,16 @@ public partial class FormCaptura : Form
 
         bool balanceCorrecto = totalDebe == totalHaber && totalDebe > 0;
 
+
         if (btnGuardar is not null)
         {
-            btnGuardar.Enabled = tieneMovimientos && balanceCorrecto;
+            bool modoJson = GaCostos.Models.SesionTrabajoJson.UsarJson;
+            bool sesionValida = modoJson || (ImportesConCentavosValidos() && PermiteGuardarSegunSesion());
+
+            btnGuardar.Text = modoJson ? "Guardar JSON" : "Guardar en BD";
+            btnGuardar.Enabled = tieneMovimientos && balanceCorrecto && sesionValida;
         }
+
 
         bool puedeImprimirCheque = ObtenerTipoCapturaActual() == TipoCaptura.Cheque && tieneMovimientos && balanceCorrecto;
 

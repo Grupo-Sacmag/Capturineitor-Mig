@@ -20,4 +20,9 @@
     </PackageReference>
   </ItemGroup>
 
+
+<ItemGroup>
+  <EmbeddedResource Remove="**\*.Json.resx;**\*.Sesiones.resx" />
+</ItemGroup>
+
 </Project>

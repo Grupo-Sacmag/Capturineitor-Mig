@@ -467,16 +467,77 @@ public sealed class CarpetaJsonService
         }
     }
 
+
+    private static void ValidarTrabajoLocalParaSql(TrabajoJson trabajo, string? rutaJson)
+    {
+        ArgumentNullException.ThrowIfNull(trabajo);
+
+        // El archivo debe existir físicamente y haberse guardado.
+        if (string.IsNullOrWhiteSpace(rutaJson) || !File.Exists(rutaJson))
+        {
+            throw new InvalidOperationException("Antes de enviar datos a SQL Server, debes guardar el JSON localmente.");
+        }
+
+        // Recuperar desde disco el estado realmente guardado.
+        TrabajoJson almacenado = JsonSerializer.Deserialize<TrabajoJson>(File.ReadAllText(rutaJson), Opciones) ?? throw new InvalidOperationException("El JSON local no contiene datos válidos.");
+
+        // No permitir enviar cambios que solo existan en memoria.
+        string contenidoLocal = JsonSerializer.Serialize(almacenado, Opciones);
+        string contenidoActual = JsonSerializer.Serialize(trabajo, Opciones);
+
+        if (!string.Equals(contenidoLocal, contenidoActual, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("Existen cambios que aún no se han guardado en el JSON local.");
+        }
+
+        if (trabajo.Polizas is null)
+            throw new InvalidOperationException("El JSON no contiene una colección válida de pólizas.");
+
+        foreach (PolizaJson poliza in trabajo.Polizas)
+        {
+            if (poliza is null || poliza.Folio <= 0 || poliza.Movimientos is null || poliza.Movimientos.Count == 0)
+            {
+                throw new InvalidOperationException("El JSON contiene una póliza sin movimientos válidos.");
+            }
+
+            decimal debeCalculado = 0m;
+            decimal haberCalculado = 0m;
+
+            foreach (MovimientoPolizaJson movimiento in poliza.Movimientos)
+            {
+                if (movimiento is null || movimiento.CuentaId <= 0 || movimiento.SubcuentaId is <= 0 || movimiento.Debe < 0m || movimiento.Haber < 0m || (movimiento.Debe > 0m &&
+                    movimiento.Haber > 0m) || decimal.Round(movimiento.Debe, 2) != movimiento.Debe || decimal.Round(movimiento.Haber, 2) != movimiento.Haber || decimal.Round(movimiento.Parcial, 2) !=
+                    movimiento.Parcial)
+                {
+                    throw new InvalidOperationException($"La póliza {poliza.Folio} tiene movimientos inválidos o importes con más de dos decimales.");
+                }
+
+                debeCalculado += movimiento.Debe;
+                haberCalculado += movimiento.Haber;
+            }
+
+            if (poliza.TotalDebe <= 0m || poliza.TotalDebe != poliza.TotalHaber || debeCalculado != haberCalculado || poliza.TotalDebe != debeCalculado || poliza.TotalHaber != haberCalculado ||
+                decimal.Round(poliza.TotalDebe, 2) != poliza.TotalDebe || decimal.Round(poliza.TotalHaber, 2) != poliza.TotalHaber)
+            {
+                throw new InvalidOperationException($"La póliza {poliza.Folio} no está correctamente cuadrada. No se enviarán datos a SQL Server.");
+            }
+        }
+    }
+
     /// <summary>
     /// Agrega o actualiza (por Id) cuentas, subcuentas y pólizas en una sola transacción (SaveChanges). No borra nada.
     /// </summary>
-    public ResultadoGuardadoBd GuardarEnBd(TrabajoJson trabajo)
+    public ResultadoGuardadoBd GuardarEnBd(TrabajoJson trabajo, string? rutaJson)
     {
+
         try
         {
+            ValidarTrabajoLocalParaSql(trabajo, rutaJson);
+
             ResultadoGuardadoBd resultado = new();
 
             using var db = new EmpresaDbContext();
+            using var transaccion = db.Database.BeginTransaction();
 
             var cuentasDb = db.Cuentas.ToDictionary(c => c.Id);
             var subcuentasDb = db.Subcuentas.ToDictionary(s => (s.CuentaId, s.Id));
@@ -593,7 +654,9 @@ public sealed class CarpetaJsonService
                 resultado.PolizasNuevas++;
             }
 
+
             db.SaveChanges();
+            transaccion.Commit();
 
             return resultado;
         }

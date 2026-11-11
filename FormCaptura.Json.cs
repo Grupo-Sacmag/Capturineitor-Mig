@@ -172,8 +172,7 @@ public partial class FormCaptura
             SesionTrabajoJson.Activar(trabajo, guardar.FileName);
             ActualizarIndicadorOrigenCaptura();
 
-            MessageBox.Show(this,
-                $"Carpeta importada a JSON ({trabajo.Cuentas.Count} cuentas).\nAhora todo el programa trabaja sobre:\n{guardar.FileName}",
+            MessageBox.Show(this, $"JSON cargado correctamente ({trabajo.Cuentas.Count} cuentas, {trabajo.Polizas.Count} pólizas).\nEl modo JSON de trabajo está activo.",
                 "Modo JSON activo", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         catch (Exception ex)
@@ -239,7 +238,7 @@ public partial class FormCaptura
             _carpetaJsonService.GuardarJson(SesionTrabajoJson.Actual, ruta);
             SesionTrabajoJson.Modificado = false;
 
-            MessageBox.Show(this, "JSON guardado correctamente en:\n" + ruta, "Guardar JSON", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(this, "JSON guardado correctamente.", "Guardar JSON", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         catch (Exception ex)
         {
@@ -276,8 +275,9 @@ public partial class FormCaptura
 
             try
             {
-                resultado = _carpetaJsonService.GuardarEnBd(json);
+                resultado = _carpetaJsonService.GuardarEnBd(json, SesionTrabajoJson.RutaArchivo);
             }
+
             finally
             {
                 Cursor = Cursors.Default;
@@ -292,9 +292,13 @@ public partial class FormCaptura
                 $"Omitidas (código no numérico): {resultado.Omitidas}",
                 "Guardado en Base de Datos", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
+
         catch (Exception ex)
         {
-            MostrarError("Error en MnuGuardarJsonEnBd_Click", ex);
+            System.Diagnostics.Trace.WriteLine(ex);
+
+            MessageBox.Show( this, "No se pudo completar el guardado en SQL Server. Verifica que el JSON esté guardado localmente y que todas sus pólizas estén cuadradas. No se ha confirmado la importación.",
+                "Guardar en Base de Datos", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
     }
 }

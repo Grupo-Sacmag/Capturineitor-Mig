@@ -40,5 +40,8 @@
     <Compile Update="FormVerSubcuentas.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Update="SesionesLocalesCaptura.cs">
+      <SubType>Form</SubType>
+    </Compile>
   </ItemGroup>
 </Project>
