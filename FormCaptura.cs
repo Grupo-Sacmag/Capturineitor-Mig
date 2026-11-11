@@ -1,4 +1,5 @@
-﻿using CapturaDePolizas_2026_NET8.Models;
+using CapturaDePolizas_2026_NET8.Business;
+using CapturaDePolizas_2026_NET8.Models;
 using CapturaDePolizas_2026_NET8.Repositories;
 using GaCostos;
 using System.Data;
@@ -23,6 +24,7 @@ public partial class FormCaptura : Form
     private readonly Stack<string[,]> _redoStack = new();
 
     private string[,]? _lastState;
+    private bool _chequeImpreso;
     private bool _isUndoing;
 
     public FormCaptura()
@@ -96,14 +98,19 @@ public partial class FormCaptura : Form
 
         chkVarios.CheckedChanged += ChkVarios_CheckedChanged;
 
+        mnuCaptura.DropDownOpening += (_, _) => ActualizarEstadoBotonGuardar();
         mnuCapturaPoliza.Click += MnuCapturaPoliza_Click;
         mnuCapturaCheque.Click += MnuCapturaCheque_Click;
+        mnuImprimirCheque.Click += MnuImprimirCheque_Click;
+        mnuAjustarCheque.Click += MnuAjustarCheque_Click;
+        btnImprimir.Click += BtnImprimir_Click;
 
         mnuVerCuentas.Click += MnuVerCuentas_Click;
         mnuVerSubcuentas.Click += MnuVerSubcuentas_Click;
         mnuVerPolizas.Click += MnuVerPolizas_Click;
         mnuVerCheques.Click += MnuVerCheques_Click;
         mnuVerEstadosFinancieros.Click += MnuVerEstadosFinancieros_Click;
+        InicializarMenuOrigenDatos();
     }
 
     private void FormCaptura_Load(object? sender, EventArgs e)
@@ -200,7 +207,10 @@ public partial class FormCaptura : Form
             return;
         }
 
-        DialogResult result = MessageBox.Show("¿Desea guardar los cambios de la captura actual antes de cambiar de pantalla?", "Confirmar Guardado", MessageBoxButtons.YesNoCancel, 
+        DialogResult result = MessageBox.Show(
+            "¿Desea guardar los cambios de la captura actual antes de cambiar de pantalla?",
+            "Confirmar Guardado",
+            MessageBoxButtons.YesNoCancel,
             MessageBoxIcon.Question
         );
 
@@ -245,6 +255,7 @@ public partial class FormCaptura : Form
         dgvMovimientos.Columns.Add("Haber", "Haber");
         dgvMovimientos.Columns.Add("Redaccion", "Redacción");
         dgvMovimientos.Columns.Add("FolioFiscal", "Folio fiscal");
+        dgvMovimientos.Columns.Add("Proyecto", "No. Proyecto");
 
         dgvMovimientos.Columns["Nombre"].ReadOnly = true;
         dgvMovimientos.Columns["Debe"].ReadOnly = true;
@@ -266,12 +277,16 @@ public partial class FormCaptura : Form
         ConfigurarColumnaGrid("Haber", 120, DataGridViewContentAlignment.MiddleRight);
         ConfigurarColumnaGrid("Redaccion", 180, DataGridViewContentAlignment.MiddleLeft);
         ConfigurarColumnaGrid("FolioFiscal", 150, DataGridViewContentAlignment.MiddleLeft);
+        ConfigurarColumnaGrid("Proyecto", 110, DataGridViewContentAlignment.MiddleLeft);
 
         dgvMovimientos.Columns["Nombre"].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
         dgvMovimientos.Columns["Nombre"].MinimumWidth = 180;
     }
 
-    private void ConfigurarColumnaGrid(string columna, int ancho, DataGridViewContentAlignment alineacion)
+    private void ConfigurarColumnaGrid(
+        string columna,
+        int ancho,
+        DataGridViewContentAlignment alineacion)
     {
         dgvMovimientos.Columns[columna].Width = ancho;
         dgvMovimientos.Columns[columna].DefaultCellStyle.Alignment = alineacion;
@@ -316,6 +331,7 @@ public partial class FormCaptura : Form
         txtFolios.Clear();
 
         chkVarios.Checked = false;
+        _chequeImpreso = false;
 
         _undoStack.Clear();
         _redoStack.Clear();
@@ -358,13 +374,141 @@ public partial class FormCaptura : Form
         IntentarCambiarPantalla(TipoCaptura.Cheque);
     }
 
+    private void MnuImprimirCheque_Click(object? sender, EventArgs e)
+    {
+        ImprimirChequeActual();
+    }
+
+    private void MnuAjustarCheque_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            using FormAjustarCheque form = new();
+            form.ShowDialog(this);
+        }
+        catch (Exception ex)
+        {
+            MostrarError("Error al abrir ajustes de cheque", ex);
+        }
+    }
+
+    private void BtnImprimir_Click(object? sender, EventArgs e)
+    {
+        ImprimirChequeActual();
+    }
+
+    private void ImprimirChequeActual()
+    {
+        if (ObtenerTipoCapturaActual() != TipoCaptura.Cheque)
+        {
+            MessageBox.Show(
+                "Debe estar en la pantalla de captura de Cheque para imprimir.",
+                "Impresión de Cheques",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning
+            );
+            return;
+        }
+
+        CalcularTotales(out decimal totalDebe, out decimal totalHaber, out bool tieneMovimientos);
+
+        if (!tieneMovimientos || totalDebe != totalHaber || totalDebe <= 0)
+        {
+            MessageBox.Show(
+                "No se puede imprimir el cheque: las sumas del Debe y el Haber deben ser correctas y mayores a cero.",
+                "Captura de Cheques",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning
+            );
+            return;
+        }
+
+        string beneficiario = txtBeneficiario.Text.Trim().ToUpper();
+        if (string.IsNullOrWhiteSpace(beneficiario))
+        {
+            MessageBox.Show(
+                "No existe beneficiario.",
+                "Captura de Cheques",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error
+            );
+            txtBeneficiario.Focus();
+            return;
+        }
+
+        string numeroCheque = txtNumeroCheque.Text.Trim().ToUpper();
+        if (string.IsNullOrWhiteSpace(numeroCheque) || numeroCheque == "0")
+        {
+            MessageBox.Show(
+                "Debe indicar un número de cheque válido.",
+                "Captura de Cheques",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error
+            );
+            txtNumeroCheque.Focus();
+            return;
+        }
+
+        decimal montoCheque = ObtenerMontoCheque();
+        if (montoCheque <= 0)
+        {
+            montoCheque = totalDebe;
+        }
+
+        try
+        {
+            ChequePrintSettings settings = ChequePrintSettings.Cargar();
+            ChequeTemplateConfig plantilla = settings.ObtenerPlantillaActiva();
+
+            var datos = new ChequePrintData
+            {
+                FechaTexto = DateTime.Today.ToString("dd 'de' MMMM 'de' yyyy", new CultureInfo("es-MX")).ToUpper(),
+                Beneficiario = beneficiario,
+                ImporteNumeroTexto = FormatHelper.FormatearImporte(montoCheque),
+                ImporteLetraTexto = NumeroALetrasHelper.ConvertirAMonedaLetra(montoCheque),
+                ConceptoTexto = txtConceptoCheque.Text.Trim().ToUpper(),
+                NumeroCheque = numeroCheque,
+                SumaDebeTexto = FormatHelper.FormatearImporte(totalDebe),
+                SumaHaberTexto = FormatHelper.FormatearImporte(totalHaber)
+            };
+
+            foreach (DataGridViewRow row in dgvMovimientos.Rows)
+            {
+                string cuenta = ObtenerTextoCelda(row, "Cuenta").Trim();
+                string subcuenta = ObtenerTextoCelda(row, "SubCta").Trim();
+
+                if (string.IsNullOrWhiteSpace(cuenta) && string.IsNullOrWhiteSpace(subcuenta))
+                    continue;
+
+                datos.Renglones.Add(new ChequeRenglonImpresion
+                {
+                    Cuenta = cuenta,
+                    Subcuenta = subcuenta,
+                    Nombre = ObtenerTextoCelda(row, "Nombre").Trim(),
+                    Parcial = ObtenerTextoCelda(row, "Parcial").Trim(),
+                    Debe = ObtenerTextoCelda(row, "Debe").Trim(),
+                    Haber = ObtenerTextoCelda(row, "Haber").Trim()
+                });
+            }
+
+            if (ChequePrintService.ImprimirConDialogo(this, datos, plantilla))
+            {
+                _chequeImpreso = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            MostrarError("Error al intentar imprimir el cheque", ex);
+        }
+    }
+
     private void MnuVerCuentas_Click(object? sender, EventArgs e)
     {
         try
         {
             DataTable datos = _catalogoRepository.ObtenerTablaCuentas();
 
-            using FormVerCuentas form = new(datos);
+            using FormVerCuentas form = new(datos, _catalogoRepository);
             form.ShowDialog(this);
         }
         catch (Exception ex)
@@ -394,7 +538,11 @@ public partial class FormCaptura : Form
         {
             DataTable datos = _catalogoRepository.ObtenerTablaPolizas();
 
-            using FormVerPolizas form = new(datos, iniciarComoCheque: false, _catalogoRepository);
+            using FormVerPolizas form = new(
+                datos,
+                iniciarComoCheque: false,
+                _catalogoRepository
+            );
 
             form.ShowDialog(this);
         }
@@ -410,7 +558,11 @@ public partial class FormCaptura : Form
         {
             DataTable datos = _catalogoRepository.ObtenerTablaPolizas();
 
-            using FormVerPolizas form = new(datos, iniciarComoCheque: true, _catalogoRepository);
+            using FormVerPolizas form = new(
+                datos,
+                iniciarComoCheque: true,
+                _catalogoRepository
+            );
 
             form.ShowDialog(this);
         }
@@ -424,9 +576,15 @@ public partial class FormCaptura : Form
     {
         try
         {
-            DataTable datos = _catalogoRepository.ObtenerTablaVacia();
+            var result = MessageBox.Show("¿Quieres incluir las cuentas de orden?", "Estados Financieros", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+            if (result == DialogResult.Cancel)
+                return;
+                
+            bool incluirCuentasOrden = result == DialogResult.Yes;
 
-            using FormVerGrid form = new("Estados Financieros", datos);
+            DataTable datos = _catalogoRepository.ObtenerEstadosFinancieros(incluirCuentasOrden);
+
+            using FormReporteBalance form = new(datos, _catalogoRepository);
             form.ShowDialog(this);
         }
         catch (Exception ex)
@@ -531,7 +689,9 @@ public partial class FormCaptura : Form
         }
     }
 
-    private void DgvMovimientos_EditingControlShowing(object? sender, DataGridViewEditingControlShowingEventArgs e)
+    private void DgvMovimientos_EditingControlShowing(
+        object? sender,
+        DataGridViewEditingControlShowingEventArgs e)
     {
         if (e.Control is not TextBox textBox)
             return;
@@ -568,6 +728,12 @@ public partial class FormCaptura : Form
         if (_activeCell is null)
             return;
 
+        if (dgvMovimientos.CurrentCell is not null && dgvMovimientos.CurrentCell.ColumnIndex == 8)
+        {
+            _activeCell = dgvMovimientos.CurrentCell;
+            return;
+        }
+
         if (dgvMovimientos.CurrentCell == _activeCell)
             return;
 
@@ -601,7 +767,10 @@ public partial class FormCaptura : Form
             return;
         }
 
-        if (dgvMovimientos.Columns.Contains("FolioFiscal") && e.ColumnIndex == dgvMovimientos.Columns["FolioFiscal"].Index && pnlCamposCheque.Visible && chkVarios.Checked)
+        if (dgvMovimientos.Columns.Contains("FolioFiscal")
+            && e.ColumnIndex == dgvMovimientos.Columns["FolioFiscal"].Index
+            && pnlCamposCheque.Visible
+            && chkVarios.Checked)
         {
             CargarFolioFiscalDesdeXml(e.RowIndex);
         }
@@ -664,6 +833,10 @@ public partial class FormCaptura : Form
             case 7:
                 ProcesarCeldaFolioFiscal(row);
                 break;
+
+            case 8:
+                ProcesarCeldaProyecto(row);
+                break;
         }
     }
 
@@ -673,7 +846,12 @@ public partial class FormCaptura : Form
 
         if (!int.TryParse(cuentaTexto, out int cuentaId))
         {
-            MessageBox.Show("POR FAVOR DIGITE UN NÚMERO DE CUENTA VÁLIDO.", "VALIDACIÓN", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(
+                "POR FAVOR DIGITE UN NÚMERO DE CUENTA VÁLIDO.",
+                "VALIDACIÓN",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning
+            );
 
             ReenfocarCelda(row, 0);
             return;
@@ -694,7 +872,12 @@ public partial class FormCaptura : Form
                 return;
             }
 
-            MessageBox.Show($"LA CUENTA {cuentaId} NO EXISTE EN EL CATÁLOGO.", "VALIDACIÓN", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(
+                $"LA CUENTA {cuentaId} NO EXISTE EN EL CATÁLOGO.",
+                "VALIDACIÓN",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning
+            );
 
             ReenfocarCelda(row, 0);
         }
@@ -709,7 +892,12 @@ public partial class FormCaptura : Form
     {
         if (row == 0)
         {
-            MessageBox.Show("NO SE PUEDE CAPTURAR UNA SUBCUENTA EN EL PRIMER RENGLÓN SIN UNA CUENTA PADRE ARRIBA.", "ERROR DE FLUJO", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(
+                "NO SE PUEDE CAPTURAR UNA SUBCUENTA EN EL PRIMER RENGLÓN SIN UNA CUENTA PADRE ARRIBA.",
+                "ERROR DE FLUJO",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error
+            );
 
             ReenfocarCelda(row, 0);
             return;
@@ -725,7 +913,12 @@ public partial class FormCaptura : Form
 
         if (!int.TryParse(subcuentaTexto, out int subcuentaId))
         {
-            MessageBox.Show("POR FAVOR DIGITE UNA SUBCUENTA VÁLIDA.", "VALIDACIÓN", MessageBoxButtons.OK, MessageBoxIcon.Warning );
+            MessageBox.Show(
+                "POR FAVOR DIGITE UNA SUBCUENTA VÁLIDA.",
+                "VALIDACIÓN",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning
+            );
 
             ReenfocarCelda(row, 1);
             return;
@@ -735,7 +928,12 @@ public partial class FormCaptura : Form
 
         if (cuentaPadreId == 0)
         {
-            MessageBox.Show("NO SE ENCONTRÓ UNA CUENTA PADRE VÁLIDA EN LAS FILAS SUPERIORES.", "ERROR DE RELACIÓN", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(
+                "NO SE ENCONTRÓ UNA CUENTA PADRE VÁLIDA EN LAS FILAS SUPERIORES.",
+                "ERROR DE RELACIÓN",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error
+            );
 
             ReenfocarCelda(row, 0);
             return;
@@ -743,14 +941,22 @@ public partial class FormCaptura : Form
 
         try
         {
-            if (_catalogoRepository.ValidarSubcuenta(subcuentaId.ToString(), cuentaPadreId.ToString(), out string nombreSubcuenta))
+            if (_catalogoRepository.ValidarSubcuenta(
+                subcuentaId.ToString(),
+                cuentaPadreId.ToString(),
+                out string nombreSubcuenta))
             {
                 dgvMovimientos["Nombre", row].Value = nombreSubcuenta.ToUpper();
                 ReenfocarCelda(row, 3);
                 return;
             }
 
-            MessageBox.Show($"LA SUBCUENTA {subcuentaId} NO EXISTE O NO PERTENECE A LA CUENTA PADRE {cuentaPadreId}.", "VALIDACIÓN RELACIONAL", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(
+                $"LA SUBCUENTA {subcuentaId} NO EXISTE O NO PERTENECE A LA CUENTA PADRE {cuentaPadreId}.",
+                "VALIDACIÓN RELACIONAL",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning
+            );
 
             ReenfocarCelda(row, 1);
         }
@@ -767,7 +973,12 @@ public partial class FormCaptura : Form
 
         if (string.IsNullOrWhiteSpace(subArriba))
         {
-            MessageBox.Show("DEBES SELECCIONAR UNA SUBCUENTA.", "VALIDACIÓN", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(
+                "DEBES SELECCIONAR UNA SUBCUENTA.",
+                "VALIDACIÓN",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning
+            );
 
             ReenfocarCelda(row, 1);
             return;
@@ -782,7 +993,12 @@ public partial class FormCaptura : Form
 
         if (!TryParseDecimal(parcialTexto, out decimal parcial) || parcial == 0)
         {
-            MessageBox.Show("SE DEBE DE COLOCAR UN MONTO.", "VALIDACIÓN", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(
+                "SE DEBE DE COLOCAR UN MONTO.",
+                "VALIDACIÓN",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning
+            );
 
             ReenfocarCelda(row, 3);
             return;
@@ -795,7 +1011,16 @@ public partial class FormCaptura : Form
             AgregarFilaGrid();
         }
 
-        if (dgvMovimientos.Columns["FolioFiscal"].Visible)
+        if (dgvMovimientos.Columns["FolioFiscal"].Visible && chkVarios.Checked)
+        {
+            ReenfocarCelda(row, 7);
+            return;
+        }
+
+        ReenfocarCelda(row, 8);
+        return;
+
+        if (false)
         {
             ReenfocarCelda(row, 7);
         }
@@ -805,7 +1030,22 @@ public partial class FormCaptura : Form
         }
     }
 
+    private void ProcesarCeldaProyecto(int row)
+    {
+        if (row == dgvMovimientos.Rows.Count - 1)
+        {
+            AgregarFilaGrid();
+        }
+
+        ReenfocarCelda(row + 1, 1);
+    }
+
     private void ProcesarCeldaFolioFiscal(int row)
+    {
+        ReenfocarCelda(row, 8);
+    }
+
+    private void ProcesarCeldaFolioFiscalAnterior(int row)
     {
         if (row == dgvMovimientos.Rows.Count - 1)
         {
@@ -879,7 +1119,10 @@ public partial class FormCaptura : Form
                 continue;
 
             tieneSubcuentas = true;
-            decimal parcial = r == editedRowIndex ? newMonto : ObtenerParcialFila(r);
+
+            decimal parcial = r == editedRowIndex
+                ? newMonto
+                : ObtenerParcialFila(r);
 
             if (parcial > 0)
             {
@@ -897,14 +1140,24 @@ public partial class FormCaptura : Form
         if (!tieneSubcuentas)
             return;
 
-        dgvMovimientos["Debe", parentCuentaRow].Value = sumaDebe == 0 && sumaHaber == 0 ? string.Empty : sumaDebe.ToString("N2", CultureInfo.CurrentCulture);
-        dgvMovimientos["Haber", parentCuentaRow].Value = sumaDebe == 0 && sumaHaber == 0 ? string.Empty : sumaHaber.ToString("N2", CultureInfo.CurrentCulture);
+        dgvMovimientos["Debe", parentCuentaRow].Value =
+            sumaDebe == 0 && sumaHaber == 0
+                ? string.Empty
+                : sumaDebe.ToString("N2", CultureInfo.CurrentCulture);
+
+        dgvMovimientos["Haber", parentCuentaRow].Value =
+            sumaDebe == 0 && sumaHaber == 0
+                ? string.Empty
+                : sumaHaber.ToString("N2", CultureInfo.CurrentCulture);
     }
 
     private decimal ObtenerParcialFila(int row)
     {
         string texto = dgvMovimientos["Parcial", row].Value?.ToString() ?? string.Empty;
-        return TryParseDecimal(texto, out decimal parcial) ? parcial : 0m;
+
+        return TryParseDecimal(texto, out decimal parcial)
+            ? parcial
+            : 0m;
     }
 
     private int ObtenerFilaCuentaPadre(int rowIndex)
@@ -946,12 +1199,16 @@ public partial class FormCaptura : Form
 
         if (dgvMovimientos.Columns.Contains("Redaccion"))
         {
-            dgvMovimientos["Redaccion", rowIndex].Value = tieneDatos ? ObtenerConceptoActivo() : string.Empty;
+            dgvMovimientos["Redaccion", rowIndex].Value = tieneDatos
+                ? ObtenerConceptoActivo()
+                : string.Empty;
         }
 
         if (dgvMovimientos.Columns.Contains("FolioFiscal") && !chkVarios.Checked)
         {
-            dgvMovimientos["FolioFiscal", rowIndex].Value = tieneDatos ? txtFolios.Text.ToUpper() : string.Empty;
+            dgvMovimientos["FolioFiscal", rowIndex].Value = tieneDatos
+                ? txtFolios.Text.ToUpper()
+                : string.Empty;
         }
     }
 
@@ -965,7 +1222,10 @@ public partial class FormCaptura : Form
             string cuenta = row.Cells["Cuenta"].Value?.ToString() ?? string.Empty;
             string subcuenta = row.Cells["SubCta"].Value?.ToString() ?? string.Empty;
 
-            row.Cells["Redaccion"].Value = !string.IsNullOrWhiteSpace(cuenta) || !string.IsNullOrWhiteSpace(subcuenta) ? concepto.ToUpper() : string.Empty;
+            row.Cells["Redaccion"].Value =
+                !string.IsNullOrWhiteSpace(cuenta) || !string.IsNullOrWhiteSpace(subcuenta)
+                    ? concepto.ToUpper()
+                    : string.Empty;
         }
     }
 
@@ -1007,7 +1267,10 @@ public partial class FormCaptura : Form
                 string cuenta = row.Cells["Cuenta"].Value?.ToString() ?? string.Empty;
                 string subcuenta = row.Cells["SubCta"].Value?.ToString() ?? string.Empty;
 
-                row.Cells["FolioFiscal"].Value = !string.IsNullOrWhiteSpace(cuenta) || !string.IsNullOrWhiteSpace(subcuenta) ? folio.ToUpper() : string.Empty;
+                row.Cells["FolioFiscal"].Value =
+                    !string.IsNullOrWhiteSpace(cuenta) || !string.IsNullOrWhiteSpace(subcuenta)
+                        ? folio.ToUpper()
+                        : string.Empty;
             }
         }
         finally
@@ -1020,7 +1283,9 @@ public partial class FormCaptura : Form
 
     private string ObtenerConceptoActivo()
     {
-        return pnlCamposPoliza.Visible ? txtConceptoPoliza.Text : txtConceptoCheque.Text;
+        return pnlCamposPoliza.Visible
+            ? txtConceptoPoliza.Text
+            : txtConceptoCheque.Text;
     }
 
     #endregion
@@ -1048,6 +1313,17 @@ public partial class FormCaptura : Form
         if (!ValidarCapturaAntesDeGuardar(totalDebe, totalHaber, tieneMovimientos))
             return false;
 
+        if (tipo == TipoCaptura.Cheque && !_chequeImpreso)
+        {
+            MessageBox.Show(
+                "El cheque no se ha impreso.",
+                "Captura de Cheques",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning
+            );
+            return false;
+        }
+
         PolizaModel model = CrearPolizaModel(tipo, folio, totalDebe, totalHaber);
 
         AgregarMovimientosAlModelo(model, tipo);
@@ -1058,7 +1334,17 @@ public partial class FormCaptura : Form
 
             if (guardado)
             {
-                MessageBox.Show("Captura guardada exitosamente en la base de datos.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                GuardarProyectosDeGridEnJson(model.Fecha.Month, folio);
+            }
+
+            if (guardado)
+            {
+                MessageBox.Show(
+                    "Captura guardada exitosamente en " + (GaCostos.Models.SesionTrabajoJson.UsarJson ? "el archivo JSON." : "la base de datos."),
+                    "Éxito",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information
+                );
             }
 
             return guardado;
@@ -1070,29 +1356,71 @@ public partial class FormCaptura : Form
         }
     }
 
+    private void GuardarProyectosDeGridEnJson(int mes, int numeroPoliza)
+    {
+        if (!dgvMovimientos.Columns.Contains("Proyecto"))
+            return;
+
+        var proyectos = new List<string>();
+
+        foreach (DataGridViewRow row in dgvMovimientos.Rows)
+        {
+            string cuenta = ObtenerTextoCelda(row, "Cuenta").Trim();
+            string subcuenta = ObtenerTextoCelda(row, "SubCta").Trim();
+
+            if (string.IsNullOrWhiteSpace(cuenta) && string.IsNullOrWhiteSpace(subcuenta))
+                continue;
+
+            string proyecto = ObtenerTextoCelda(row, "Proyecto").Trim();
+            if (!string.IsNullOrWhiteSpace(proyecto))
+            {
+                proyectos.Add(proyecto);
+            }
+        }
+
+        ProyectoJsonService.GuardarProyectos(mes, numeroPoliza, proyectos);
+    }
+
     private bool ValidarFolio(out int folio)
     {
         if (int.TryParse(txtPolizaNo.Text, out folio))
             return true;
 
-        MessageBox.Show("Número de póliza inválido.", "Error de Validación", MessageBoxButtons.OK, MessageBoxIcon.Error );
+        MessageBox.Show(
+            "Número de póliza inválido.",
+            "Error de Validación",
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Error
+        );
 
         return false;
     }
 
-    private bool ValidarCapturaAntesDeGuardar(decimal totalDebe, decimal totalHaber, bool tieneMovimientos)
+    private bool ValidarCapturaAntesDeGuardar(
+        decimal totalDebe,
+        decimal totalHaber,
+        bool tieneMovimientos)
     {
         if (!tieneMovimientos)
         {
-            MessageBox.Show("No se puede guardar una póliza/cheque sin movimientos.", "Error de Validación", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(
+                "No se puede guardar una póliza/cheque sin movimientos.",
+                "Error de Validación",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning
+            );
 
             return false;
         }
 
         if (totalDebe != totalHaber || totalDebe <= 0)
         {
-            MessageBox.Show("No se puede guardar la póliza/cheque: las sumas del Debe y el Haber deben estar balanceadas y ser mayores a cero.", "Error de Balance", MessageBoxButtons.OK,
-                MessageBoxIcon.Warning);
+            MessageBox.Show(
+                "No se puede guardar la póliza/cheque: las sumas del Debe y el Haber deben estar balanceadas y ser mayores a cero.",
+                "Error de Balance",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning
+            );
 
             return false;
         }
@@ -1100,7 +1428,11 @@ public partial class FormCaptura : Form
         return true;
     }
 
-    private PolizaModel CrearPolizaModel(TipoCaptura tipo, int folio, decimal totalDebe, decimal totalHaber)
+    private PolizaModel CrearPolizaModel(
+        TipoCaptura tipo,
+        int folio,
+        decimal totalDebe,
+        decimal totalHaber)
     {
         var model = new PolizaModel
         {
@@ -1163,7 +1495,10 @@ public partial class FormCaptura : Form
         }
     }
 
-    private MovimientoModel CrearMovimientoCuentaDirecta(DataGridViewRow row, int cuentaId, TipoCaptura tipo)
+    private MovimientoModel CrearMovimientoCuentaDirecta(
+        DataGridViewRow row,
+        int cuentaId,
+        TipoCaptura tipo)
     {
         decimal debe = ObtenerDecimalCelda(row, "Debe");
         decimal haber = ObtenerDecimalCelda(row, "Haber");
@@ -1186,7 +1521,11 @@ public partial class FormCaptura : Form
         return movimiento;
     }
 
-    private MovimientoModel CrearMovimientoSubcuenta(DataGridViewRow row, int cuentaId, int subcuentaId, TipoCaptura tipo)
+    private MovimientoModel CrearMovimientoSubcuenta(
+        DataGridViewRow row,
+        int cuentaId,
+        int subcuentaId,
+        TipoCaptura tipo)
     {
         decimal parcial = ObtenerDecimalCelda(row, "Parcial");
 
@@ -1240,7 +1579,8 @@ public partial class FormCaptura : Form
 
         if (lblResumenSuma is not null)
         {
-            lblResumenSuma.Text = $"Suma Debe: {totalDebe:N2} | Suma Haber: {totalHaber:N2} | Diferencia: {diferencia:N2}";
+            lblResumenSuma.Text =
+                $"Suma Debe: {totalDebe:N2} | Suma Haber: {totalHaber:N2} | Diferencia: {diferencia:N2}";
         }
 
         bool balanceCorrecto = totalDebe == totalHaber && totalDebe > 0;
@@ -1248,6 +1588,18 @@ public partial class FormCaptura : Form
         if (btnGuardar is not null)
         {
             btnGuardar.Enabled = tieneMovimientos && balanceCorrecto;
+        }
+
+        bool puedeImprimirCheque = ObtenerTipoCapturaActual() == TipoCaptura.Cheque && tieneMovimientos && balanceCorrecto;
+
+        if (btnImprimir is not null)
+        {
+            btnImprimir.Enabled = puedeImprimirCheque;
+        }
+
+        if (mnuImprimirCheque is not null)
+        {
+            mnuImprimirCheque.Enabled = puedeImprimirCheque;
         }
 
         if (btnEstadoSumas is not null)
@@ -1267,7 +1619,10 @@ public partial class FormCaptura : Form
         }
     }
 
-    private void CalcularTotales(out decimal totalDebe, out decimal totalHaber, out bool tieneMovimientos)
+    private void CalcularTotales(
+        out decimal totalDebe,
+        out decimal totalHaber,
+        out bool tieneMovimientos)
     {
         totalDebe = 0m;
         totalHaber = 0m;
@@ -1321,7 +1676,12 @@ public partial class FormCaptura : Form
 
         if (!int.TryParse(cuentaPadre, out int cuentaPadreId))
         {
-            MessageBox.Show("No se encontró una Cuenta Padre válida en la fila superior.", "Error de Relación", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(
+                "No se encontró una Cuenta Padre válida en la fila superior.",
+                "Error de Relación",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error
+            );
 
             ReenfocarCelda(rowIndex - 1, 0);
             return;
@@ -1331,7 +1691,10 @@ public partial class FormCaptura : Form
         {
             DataTable datos = _catalogoRepository.ObtenerSubcuentasBusqueda(cuentaPadreId);
 
-            using FormBuscarCatalogo form = new($"Buscar Subcuenta para Cuenta {cuentaPadreId}", datos);
+            using FormBuscarCatalogo form = new(
+                $"Buscar Subcuenta para Cuenta {cuentaPadreId}",
+                datos
+            );
 
             if (form.ShowDialog(this) == DialogResult.OK)
             {
@@ -1367,7 +1730,12 @@ public partial class FormCaptura : Form
 
             if (string.IsNullOrWhiteSpace(uuid))
             {
-                MessageBox.Show("NO SE ENCONTRÓ EL FOLIO FISCAL (UUID) EN EL ARCHIVO XML.", "ADVERTENCIA", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(
+                    "NO SE ENCONTRÓ EL FOLIO FISCAL (UUID) EN EL ARCHIVO XML.",
+                    "ADVERTENCIA",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning
+                );
 
                 return;
             }
@@ -1380,7 +1748,12 @@ public partial class FormCaptura : Form
 
             ActualizarBotonesUndoRedo();
 
-            MessageBox.Show($"FOLIO FISCAL EXTRAÍDO CON ÉXITO:\n{uuid.ToUpper()}", "ÉXITO", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(
+                $"FOLIO FISCAL EXTRAÍDO CON ÉXITO:\n{uuid.ToUpper()}",
+                "ÉXITO",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information
+            );
         }
         catch (Exception ex)
         {
@@ -1390,9 +1763,15 @@ public partial class FormCaptura : Form
 
     private static string ExtraerUuidDeXml(string xmlContent)
     {
-        Match match = Regex.Match(xmlContent, @"UUID\s*=\s*[""']([^""']+)[""']", RegexOptions.IgnoreCase);
+        Match match = Regex.Match(
+            xmlContent,
+            @"UUID\s*=\s*[""']([^""']+)[""']",
+            RegexOptions.IgnoreCase
+        );
 
-        return match.Success ? match.Groups[1].Value.Trim() : string.Empty;
+        return match.Success
+            ? match.Groups[1].Value.Trim()
+            : string.Empty;
     }
 
     #endregion
@@ -1668,6 +2047,7 @@ public partial class FormCaptura : Form
             // Se muestra la misma instancia de FormCaptura.
             Show();
             Activate();
+            ActualizarIndicadorOrigenCaptura();
         }
     }
 }

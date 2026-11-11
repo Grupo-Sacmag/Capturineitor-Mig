@@ -8,6 +8,6 @@ namespace CapturaDePolizas_2026_NET8.Configuration
 {
     public static class ConnectionConfig
     {
-        public static string DefaultConnection = "Data Source=WSTSEC773;Initial Catalog=sacmag_empresa_1;Integrated Security=True;Trust Server Certificate=True";
+        public static string DefaultConnection = "Data Source=WSTSEC-280;Initial Catalog=sacmag_empresa_1;Integrated Security=True;Trust Server Certificate=True";
     }
 }

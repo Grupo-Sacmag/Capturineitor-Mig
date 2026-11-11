@@ -1,4 +1,4 @@
-﻿using CapturaDePolizas_2026_NET8.Repositories;
+using CapturaDePolizas_2026_NET8.Repositories;
 using System.Data;
 using System.Globalization;
 
@@ -9,10 +9,11 @@ public partial class FormVerSubcuentas : Form
     private readonly DataTable _datosOriginales;
     private readonly DataView _vistaFiltrada;
     private readonly ICatalogoRepository _catalogoRepository;
+    private readonly int? _cuentaIdInicial;
 
     private bool _eventosDeshabilitados;
 
-    public FormVerSubcuentas(DataTable datos, ICatalogoRepository catalogoRepository)
+    public FormVerSubcuentas(DataTable datos, ICatalogoRepository catalogoRepository, int? cuentaIdInicial = null)
     {
         ArgumentNullException.ThrowIfNull(datos);
         ArgumentNullException.ThrowIfNull(catalogoRepository);
@@ -22,6 +23,7 @@ public partial class FormVerSubcuentas : Form
         _datosOriginales = datos;
         _vistaFiltrada = new DataView(_datosOriginales);
         _catalogoRepository = catalogoRepository;
+        _cuentaIdInicial = cuentaIdInicial;
 
         InicializarFormulario();
     }
@@ -41,6 +43,14 @@ public partial class FormVerSubcuentas : Form
 
         ConfigurarColumnasGrid();
         AplicarFiltros();
+
+        Shown += (s, e) =>
+        {
+            if (dgvSubcuentas.Rows.Count > 0)
+            {
+                dgvSubcuentas.Focus();
+            }
+        };
     }
 
     private void ConfigurarFormulario()
@@ -88,6 +98,9 @@ public partial class FormVerSubcuentas : Form
         cmbColumna.Items.Add("Cuenta");
         cmbColumna.Items.Add("Subcuenta");
         cmbColumna.Items.Add("Nombre");
+        cmbColumna.Items.Add("Debe");
+        cmbColumna.Items.Add("Haber");
+        cmbColumna.Items.Add("Importe Neto");
 
         cmbColumna.SelectedIndex = 0;
     }
@@ -103,19 +116,29 @@ public partial class FormVerSubcuentas : Form
 
             DataTable cuentas = _catalogoRepository.ObtenerCuentasBusqueda();
 
+            int indiceSeleccionar = 0;
+            int indice = 1;
+
             foreach (DataRow row in cuentas.Rows)
             {
                 string numero = row["Número"]?.ToString() ?? string.Empty;
                 string nombre = row["Nombre"]?.ToString() ?? string.Empty;
 
                 cmbCuentaPadre.Items.Add($"{numero} - {nombre}");
+
+                if (_cuentaIdInicial.HasValue && int.TryParse(numero, out int cId) && cId == _cuentaIdInicial.Value)
+                {
+                    indiceSeleccionar = indice;
+                }
+
+                indice++;
             }
 
-            cmbCuentaPadre.SelectedIndex = 0;
+            cmbCuentaPadre.SelectedIndex = indiceSeleccionar;
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Error al cargar el catálogo de cuentas para filtrar: {ex.Message}", "Error", MessageBoxButtons.OK,MessageBoxIcon.Error);
+            MessageBox.Show($"Error al cargar el catálogo de cuentas para filtrar: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         finally
         {
@@ -136,6 +159,59 @@ public partial class FormVerSubcuentas : Form
         cmbColumna.SelectedIndexChanged += Filtros_Changed;
 
         btnRestablecer.Click += BtnRestablecer_Click;
+        dgvSubcuentas.CellDoubleClick += DgvSubcuentas_CellDoubleClick;
+        dgvSubcuentas.KeyDown += DgvSubcuentas_KeyDown;
+    }
+
+    private void DgvSubcuentas_CellDoubleClick(object? sender, DataGridViewCellEventArgs e)
+    {
+        if (e.RowIndex >= 0)
+        {
+            AbrirPolizasDeSubcuentaSeleccionada();
+        }
+    }
+
+    private void DgvSubcuentas_KeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.KeyCode == Keys.Enter)
+        {
+            e.Handled = true;
+            e.SuppressKeyPress = true;
+            AbrirPolizasDeSubcuentaSeleccionada();
+        }
+    }
+
+    private void AbrirPolizasDeSubcuentaSeleccionada()
+    {
+        if (dgvSubcuentas.CurrentRow?.DataBoundItem is not DataRowView drv)
+            return;
+
+        if (int.TryParse(drv["Cuenta"]?.ToString(), out int cuentaId) &&
+            int.TryParse(drv["Subcuenta"]?.ToString(), out int subcuentaId))
+        {
+            try
+            {
+                DataTable datosPolizas = _catalogoRepository.ObtenerTablaPolizasPorSubcuenta(cuentaId, subcuentaId);
+
+                using FormVerPolizas form = new(datosPolizas, iniciarComoCheque: null, _catalogoRepository);
+                form.ShowDialog(this);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al abrir las pólizas de la subcuenta: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+    }
+
+    protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+    {
+        if (keyData == Keys.Enter)
+        {
+            AbrirPolizasDeSubcuentaSeleccionada();
+            return true;
+        }
+
+        return base.ProcessCmdKey(ref msg, keyData);
     }
 
     #endregion
@@ -267,8 +343,10 @@ public partial class FormVerSubcuentas : Form
         DeshabilitarOrdenamientoManual();
         ConfigurarColumnaCuenta();
         ConfigurarColumnaSubcuenta();
-        ConfigurarColumnaImporteNeto();
         ConfigurarColumnaNombre();
+        ConfigurarColumnaDebe();
+        ConfigurarColumnaHaber();
+        ConfigurarColumnaImporteNeto();
     }
 
     private void DeshabilitarOrdenamientoManual()
@@ -295,12 +373,36 @@ public partial class FormVerSubcuentas : Form
         dgvSubcuentas.Columns["Subcuenta"].Width = 80;
     }
 
+    private void ConfigurarColumnaDebe()
+    {
+        if (!dgvSubcuentas.Columns.Contains("Debe"))
+            return;
+
+        dgvSubcuentas.Columns["Debe"].Width = 110;
+        dgvSubcuentas.Columns["Debe"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+        dgvSubcuentas.Columns["Debe"].DefaultCellStyle.Format = "N2";
+    }
+
+    private void ConfigurarColumnaHaber()
+    {
+        if (!dgvSubcuentas.Columns.Contains("Haber"))
+            return;
+
+        dgvSubcuentas.Columns["Haber"].Width = 110;
+        dgvSubcuentas.Columns["Haber"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+        dgvSubcuentas.Columns["Haber"].DefaultCellStyle.Format = "N2";
+    }
+
     private void ConfigurarColumnaImporteNeto()
     {
         if (!dgvSubcuentas.Columns.Contains("Importe Neto"))
             return;
 
-        dgvSubcuentas.Columns["Importe Neto"].Visible = false;
+        dgvSubcuentas.Columns["Importe Neto"].HeaderText = "Total";
+        dgvSubcuentas.Columns["Importe Neto"].Width = 120;
+        dgvSubcuentas.Columns["Importe Neto"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+        dgvSubcuentas.Columns["Importe Neto"].DefaultCellStyle.Format = "N2";
+        dgvSubcuentas.Columns["Importe Neto"].Visible = true;
     }
 
     private void ConfigurarColumnaNombre()

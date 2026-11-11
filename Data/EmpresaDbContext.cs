@@ -1,4 +1,4 @@
-﻿using CapturaDePolizas_2026_NET8.Configuration;
+using CapturaDePolizas_2026_NET8.Configuration;
 using CapturaDePolizas_2026_NET8.Entities;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -54,6 +54,8 @@ namespace CapturaDePolizas_2026_NET8.Context
                 entity.Property(c => c.Nombre).HasColumnName("nombre");
                 entity.Property(c => c.MontoBruto).HasColumnName("monto_bruto");
                 entity.Property(c => c.NumSubcuentas).HasColumnName("num_subcuentas");
+                entity.Property(c => c.TipoCuenta).HasColumnName("tipo_cuenta");
+                entity.Property(c => c.Clasificacion).HasColumnName("clasificacion");
             });
         }
 
